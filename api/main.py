@@ -20,11 +20,12 @@ app.add_middleware(
 )
 
 # Import routers
-from routers import assessments, findings, reports
+from routers import assessments, findings, reports, tasks
 
 app.include_router(assessments.router, prefix="/api")
 app.include_router(findings.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
+app.include_router(tasks.router, prefix="/api")
 
 
 @app.get("/api/stats")

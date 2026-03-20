@@ -7,14 +7,16 @@ import {
   FileText,
   Settings,
   Shield,
+  Terminal,
 } from 'lucide-react'
 import { useSidebar } from '../../App'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/assessments', icon: ClipboardList, label: 'Assessments' },
-  { to: '/findings', icon: AlertTriangle, label: 'Findings' },
-  { to: '/reports', icon: FileText, label: 'Reports' },
+  { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/assessments', icon: ClipboardList,   label: 'Assessments' },
+  { to: '/findings',    icon: AlertTriangle,   label: 'Findings' },
+  { to: '/reports',     icon: FileText,        label: 'Reports' },
+  { to: '/console',     icon: Terminal,        label: 'Console' },
 ]
 
 const systemItems = [

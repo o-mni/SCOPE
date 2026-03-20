@@ -7,6 +7,7 @@ import AssessmentDetail from './pages/AssessmentDetail'
 import Findings from './pages/Findings'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
+import Console from './pages/Console'
 import ToastContainer from './components/shared/ToastContainer'
 
 // Toast Context
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="/findings" element={<Findings />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/console" element={<Console />} />
           </Route>
         </Routes>
       </AppProviders>
