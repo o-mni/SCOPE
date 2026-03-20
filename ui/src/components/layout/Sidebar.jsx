@@ -7,7 +7,7 @@ import {
   FileText,
   Settings,
   Shield,
-  Terminal,
+  TerminalSquare,
 } from 'lucide-react'
 import { useSidebar } from '../../App'
 
@@ -16,7 +16,7 @@ const navItems = [
   { to: '/assessments', icon: ClipboardList,   label: 'Assessments' },
   { to: '/findings',    icon: AlertTriangle,   label: 'Findings' },
   { to: '/reports',     icon: FileText,        label: 'Reports' },
-  { to: '/console',     icon: Terminal,        label: 'Console' },
+  { to: '/shell',       icon: TerminalSquare,  label: 'Local Shell' },
 ]
 
 const systemItems = [
@@ -172,7 +172,7 @@ export default function Sidebar() {
           className="px-4 py-3 flex-shrink-0"
           style={{ borderTop: '1px solid #2A2D3A' }}
         >
-          <p className="text-xs" style={{ color: '#6B7280' }}>SCOPE v1.0.0</p>
+          <p className="text-xs" style={{ color: '#6B7280' }}>SCOPE v1.1.0</p>
           <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Local instance</p>
         </div>
       )}

@@ -35,7 +35,7 @@ source "$VENV/bin/activate"
 
 if ! python3 -c "import fastapi" 2>/dev/null; then
     echo "[API] Installing Python dependencies..."
-    python3 -m pip install --quiet fastapi uvicorn sqlalchemy pydantic
+    python3 -m pip install --quiet fastapi "uvicorn[standard]" sqlalchemy pydantic
 fi
 
 # ── UI deps ───────────────────────────────────────────────────────────────────

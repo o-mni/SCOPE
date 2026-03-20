@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base, get_db
@@ -10,10 +12,15 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="SCOPE API", version="1.0.0")
 
-# CORS
+# CORS — localhost only (terminal WebSocket connections included)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,11 +28,13 @@ app.add_middleware(
 
 # Import routers
 from routers import assessments, findings, reports, tasks
+from routers import terminal
 
 app.include_router(assessments.router, prefix="/api")
 app.include_router(findings.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
+app.include_router(terminal.router, prefix="/api")
 
 
 @app.get("/api/stats")
@@ -89,3 +98,18 @@ def startup_event():
             seed.seed_database(db)
     finally:
         db.close()
+
+
+@app.on_event("startup")
+async def start_terminal_reaper():
+    """Background task: reap idle or dead terminal sessions every 60 seconds."""
+    async def _reap_loop():
+        while True:
+            await asyncio.sleep(60)
+            try:
+                from terminal.manager import session_manager
+                session_manager.reap_idle()
+            except Exception:
+                pass
+
+    asyncio.create_task(_reap_loop())
