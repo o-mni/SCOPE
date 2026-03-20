@@ -1,54 +1,71 @@
 #!/bin/bash
-# SCOPE — Start both API and UI dev servers
+# SCOPE — Single-command launcher (Linux only)
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV="$SCRIPT_DIR/api/.venv"
 
 echo ""
 echo "  ╔══════════════════════════════════╗"
 echo "  ║   SCOPE Local Security Platform  ║"
-echo "  ║   Starting services...           ║"
 echo "  ╚══════════════════════════════════╝"
 echo ""
 
-# Resolve python command (python3 on Linux, python on Windows)
-if command -v python3 &>/dev/null; then
-    PY=python3
-    PIP=pip3
-elif command -v python &>/dev/null; then
-    PY=python
-    PIP=pip
-else
-    echo "[ERROR] Python not found. Please install Python 3.9+."
+# ── Python ────────────────────────────────────────────────────────────────────
+if ! command -v python3 &>/dev/null; then
+    echo "[ERROR] python3 not found. Install Python 3.11+."
     exit 1
 fi
 
+# ── Node / npm ────────────────────────────────────────────────────────────────
 if ! command -v npm &>/dev/null; then
-    echo "[ERROR] npm not found. Please install Node.js 18+."
+    echo "[ERROR] npm not found."
+    echo "        Install with: sudo pacman -S nodejs npm"
     exit 1
 fi
 
-# Install UI deps if needed
-if [ ! -d "ui/node_modules" ]; then
-    echo "[UI] Installing npm dependencies..."
-    (cd ui && npm install)
+# ── Python venv + deps ────────────────────────────────────────────────────────
+if [ ! -d "$VENV" ]; then
+    echo "[API] Creating Python virtual environment..."
+    python3 -m venv "$VENV"
 fi
 
-# Install API deps if needed
-if ! $PY -c "import fastapi" 2>/dev/null; then
+# Activate venv
+source "$VENV/bin/activate"
+
+if ! python3 -c "import fastapi" 2>/dev/null; then
     echo "[API] Installing Python dependencies..."
-    $PIP install fastapi uvicorn sqlalchemy pydantic
+    python3 -m pip install --quiet fastapi uvicorn sqlalchemy pydantic
 fi
 
-echo "[API] Starting FastAPI on http://localhost:8000"
-echo "[UI]  Starting Vite on  http://localhost:5173"
+# ── UI deps ───────────────────────────────────────────────────────────────────
+if [ ! -d "$SCRIPT_DIR/ui/node_modules" ]; then
+    echo "[UI]  Installing npm dependencies..."
+    (cd "$SCRIPT_DIR/ui" && npm install --silent)
+fi
+
+# Ensure vite is executable (can lose +x after git operations)
+chmod +x "$SCRIPT_DIR/ui/node_modules/.bin/"* 2>/dev/null || true
+
+# ── Launch ────────────────────────────────────────────────────────────────────
+echo "[API] Starting FastAPI  →  http://localhost:8000"
+echo "[UI]  Starting Vite     →  http://localhost:5173"
 echo ""
 echo "  Open: http://localhost:5173"
 echo ""
 
-# Start API in background
-(cd api && $PY -m uvicorn main:app --reload --port 8000) &
+# Trap Ctrl-C to kill both servers cleanly
+cleanup() {
+    echo ""
+    echo "  Stopping SCOPE..."
+    kill "$API_PID" 2>/dev/null
+    exit 0
+}
+trap cleanup INT TERM
+
+(cd "$SCRIPT_DIR/api" && python3 -m uvicorn main:app --reload --port 8000 --log-level warning) &
 API_PID=$!
 
-# Start UI in foreground
-(cd ui && npm run dev)
+(cd "$SCRIPT_DIR/ui" && npm run dev --silent)
 
-# On exit, kill API
-kill $API_PID 2>/dev/null
+kill "$API_PID" 2>/dev/null

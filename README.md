@@ -2,10 +2,11 @@
 
 **Security Configuration Observation and Protection Engine**
 
-> A local-first security audit engine for organizations that need to observe risk, harden configurations, and act on findings — without sending data anywhere.
+> A local-first Linux security assessment platform for authorized defensive use.
+> Observe risk, audit configurations, run modular checks, manage findings, and generate reports — entirely on your own infrastructure.
 
-[![CI](https://github.com/yourusername/scope/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/scope/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![Platform: Linux](https://img.shields.io/badge/platform-Linux-informational.svg)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Status: Early Development](https://img.shields.io/badge/status-early%20development-orange.svg)]()
 
@@ -13,11 +14,13 @@
 
 ## What is SCOPE?
 
-SCOPE is an open-source, CLI-first internal security audit engine designed for small and medium businesses, sysadmins, and security-conscious developers who need structured visibility into their security posture without the overhead of enterprise tooling.
+SCOPE is an open-source local security assessment platform built for Linux.
+It runs entirely on the machine being audited. It collects nothing, phones home to nothing,
+and performs no actions beyond reading system state and producing reports.
 
-It runs entirely on your own infrastructure. It collects nothing, phones home to nothing, and performs no actions beyond reading system state and producing reports.
+SCOPE **audits, detects, and reports**. It does not exploit, modify, or automate offensive actions.
 
-SCOPE audits, detects, and reports. It does not exploit, modify, or automate offensive actions.
+**Platform:** Linux only. Developed on Arch Linux. Tested on systemd-based distributions.
 
 ---
 
@@ -25,192 +28,202 @@ SCOPE audits, detects, and reports. It does not exploit, modify, or automate off
 
 | Feature | Description |
 |---|---|
-| **Configuration Auditing** | Examine OS, service, and application configurations for hardening gaps |
-| **System Checks** | Review user accounts, file permissions, kernel parameters, and privilege exposure |
-| **Network Visibility** | Identify unexpected listening ports, firewall state, and TLS configuration issues |
-| **Secret Detection** | Surface hardcoded credentials, exposed key files, and insecure environment handling |
-| **Software Hygiene** | Flag outdated packages and vulnerable service configurations |
-| **Prioritized Findings** | All findings carry severity (Critical → Info) and actionable remediation guidance |
-| **Flexible Reporting** | Output to terminal (Rich), Markdown, or JSON — Jinja2-templated reports |
-| **Audit Profiles** | Configurable YAML profiles: default, strict, or minimal scan depth |
+| **Local Web GUI** | Browser-based dashboard at `localhost:5173` |
+| **Modular Audit Engine** | 11 real Linux check modules across 5 categories |
+| **Playbook Workflows** | Run curated module groups (CIS baseline, SSH hardening, etc.) |
+| **Live SSE Console** | Real-time streaming output as each module executes |
+| **Findings Management** | Severity-ranked findings with full remediation guidance |
+| **Report Generation** | HTML, Markdown, and JSON reports written to `reports/` |
+| **Assessment Tracking** | Manage multiple assessments with run history |
+| **No Cloud Dependency** | Everything runs and stays local |
+
+---
+
+## Audit Modules
+
+| Module | What it checks |
+|---|---|
+| `system.kernel_params` | Sysctl hardening parameters via `/proc/sys/` |
+| `system.user_accounts` | UID 0 accounts, empty passwords, sudoers NOPASSWD |
+| `system.file_permissions` | World-writable files, unexpected SUID/SGID binaries |
+| `network.open_ports` | Listening ports via `ss -tlnp`, dangerous service detection |
+| `network.firewall_state` | ufw / iptables / nftables active state and persistence |
+| `auth.ssh_config` | `/etc/ssh/sshd_config` — root login, ciphers, idle timeout, etc. |
+| `auth.pam_config` | PAM password complexity and account lockout configuration |
+| `software.package_versions` | Stale package DB, EOL package detection (pacman/apt/rpm) |
+| `software.service_config` | Dangerous running services (telnet, rsh, vsftpd, etc.) |
+| `secrets.env_files` | Hardcoded credentials in config/env files |
+| `secrets.key_files` | SSH private key and `authorized_keys` permission audit |
+
+---
+
+## Playbooks
+
+| Playbook | Modules |
+|---|---|
+| `linux-baseline` | All 11 modules — full CIS-aligned baseline |
+| `ssh-hardening` | `auth.ssh_config`, `auth.pam_config`, `secrets.key_files` |
+| `network-exposure` | `network.open_ports`, `network.firewall_state` |
+| `user-accounts` | `system.user_accounts`, `auth.pam_config` |
+| `file-permissions` | `system.file_permissions`, `secrets.key_files` |
+
+---
+
+## Architecture
+
+```
+Browser (React + Vite :5173)
+    │  REST + Server-Sent Events
+    ▼
+FastAPI (:8000)
+    │  POST /api/tasks  → task_id
+    │  GET  /api/tasks/{id}/stream → SSE events
+    ▼
+AuditRunner (engine/runner.py)
+    │  Loads module list from REGISTRY
+    │  Checks EUID, tool availability
+    │  Executes each BaseCheck.run() in thread pool
+    │  Yields SSE events per finding
+    ▼
+Audit Modules (engine/modules/**)
+    │  Read /proc/sys/, /etc/, /var/
+    │  subprocess.run(["ss", ...])  ← no shell=True
+    │  Return list[CheckFinding]
+    ▼
+SQLite (api/scope.db)
+    │  Findings, Runs, Assessments, Reports, Activity
+    ▼
+React pages read via REST for display
+```
 
 ---
 
 ## Design Principles
 
 **1. Defensive only.**
-SCOPE exists to reduce risk, not to exploit it. No check in this project performs any action that would cause harm, exfiltrate data, or grant unauthorized access.
+No check causes harm, exfiltrates data, or grants unauthorised access.
 
 **2. Local-first.**
-All processing happens on the machine being audited. No telemetry, no cloud dependency, no license servers.
+All processing happens on the machine being audited. No telemetry, no cloud dependency.
 
-**3. Authorized scope only.**
-SCOPE is designed to be run by the person or team responsible for the system being audited. Running it against systems you do not own or have explicit written permission to audit is prohibited and out of scope for this project.
+**3. Linux-native.**
+SCOPE assumes Linux — `/proc/`, `/etc/`, `systemd`, `ss`, standard file permissions.
+It does not attempt cross-platform compatibility.
 
-**4. Transparency.**
-Every finding includes what was checked, what was found, why it matters, and what to do about it. No black-box scoring.
+**4. Authorised scope only.**
+SCOPE is designed to be run by the person or team responsible for the system being audited.
 
-**5. Practical over perfect.**
-SCOPE targets the most impactful hardening gaps for small and medium organizations — not theoretical edge cases.
+**5. Safe subprocess usage.**
+No `shell=True`. All external commands are called with list arguments and a timeout.
+Tools are checked for availability before use. Root-required checks skip gracefully when not root.
+
+**6. Transparency.**
+Every finding includes what was checked, what was found, why it matters, and what to do about it.
 
 ---
 
 ## Ethical Use Statement
 
-SCOPE is a defensive tool. It is designed and maintained with the explicit intent of helping organizations improve their security posture through visibility and remediation guidance.
+SCOPE is a defensive tool maintained with the explicit intent of helping operators
+improve their security posture through visibility and remediation guidance.
 
 **This tool must only be used:**
 - On systems you own or administer
-- On systems where you have explicit written authorization to perform a security audit
+- On systems where you have explicit written authorisation to perform a security audit
 - In compliance with all applicable laws and regulations in your jurisdiction
 
-Misuse of this tool against systems you do not have authorization to audit is a violation of this project's terms and may be illegal under computer fraud and abuse laws in your jurisdiction.
+Misuse of this tool against systems you do not have authorisation to audit may be
+illegal under computer fraud and abuse laws in your jurisdiction.
 
-By using SCOPE, you agree to use it only for lawful, authorized, defensive purposes.
-
-See [SECURITY.md](./SECURITY.md) for the full responsible use and disclosure policy.
-
----
-
-## Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────┐
-│                     CLI (Typer)                     │
-│         scope audit / scope scan / scope report     │
-└───────────────────────┬─────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────┐
-│                   AuditRunner                       │
-│   Loads config → discovers checks → executes them   │
-└──────┬────────────────────────────────────┬──────────┘
-       │                                    │
-       ▼                                    ▼
-┌──────────────┐                   ┌────────────────────┐
-│   Checks     │                   │  FindingAggregator │
-│  (pluggable) │ ──── Finding[] ──▶│  dedup, sort, rank │
-│  BaseCheck   │                   └────────┬───────────┘
-└──────────────┘                            │
-  system/                                   ▼
-  network/                       ┌────────────────────┐
-  software/                      │     Reporters      │
-  secrets/                       │  console / md / json│
-                                 └────────────────────┘
-```
-
-Check modules are pluggable and platform-aware (Linux / Windows). Adding a new check requires one file and no wiring changes.
-
----
-
-## Project Status
-
-SCOPE is in **early development**. The architecture and module structure are being established. No production-ready checks have been implemented yet.
-
-Current milestone: `v0.1.0` — repository skeleton, data models, CLI scaffold, and base check interface.
-
-See the [roadmap](#roadmap) below for what comes next.
+By using SCOPE, you agree to use it only for lawful, authorised, defensive purposes.
 
 ---
 
 ## Installation
 
-> **Note:** SCOPE is not yet published to PyPI. Install from source during early development.
-
-**Requirements:** Python 3.11+, Linux or Windows
+**Requirements:** Python 3.11+, Node.js 18+, Linux (systemd-based)
 
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/scope.git
 cd scope
 
-# Create and activate a virtual environment
-python -m venv .venv
-source .venv/bin/activate        # Linux/macOS
-.venv\Scripts\activate           # Windows
-
-# Install in editable mode with all dependencies
-pip install -e ".[dev]"
+# Start both API and UI
+chmod +x start.sh
+./start.sh
 ```
 
----
+Open `http://localhost:5173` in your browser.
 
-## Quick Start
-
+**Optional — run as root for full coverage:**
 ```bash
-# Show available commands
-scope --help
-
-# Run a full audit with the default profile
-scope audit --config config/default.yaml
-
-# Run a minimal audit and output JSON
-scope audit --config config/minimal.yaml --format json --output report.json
-
-# Generate a Markdown report from a previous audit result
-scope report --input report.json --format markdown --output report.md
+sudo ./start.sh
 ```
-
-> Depending on the checks enabled and your OS, some checks may require elevated privileges (root on Linux, Administrator on Windows). SCOPE will tell you which checks were skipped due to insufficient permissions rather than failing silently.
+Some modules (e.g. `/etc/shadow` checks) require root. Non-root modules always run regardless.
 
 ---
 
-## Audit Profiles
+## Project Structure
 
-SCOPE ships with three built-in profiles in `config/`:
-
-| Profile | File | Use Case |
-|---|---|---|
-| Default | `config/default.yaml` | Balanced — all checks, LOW severity threshold |
-| Strict | `config/strict.yaml` | Thorough — all checks, INFO threshold, verbose |
-| Minimal | `config/minimal.yaml` | Fast — system checks only, HIGH threshold |
-
-You can copy and customize any profile for your environment.
+```
+SCOPE/
+├── api/
+│   ├── main.py              # FastAPI app
+│   ├── database.py          # SQLAlchemy + SQLite
+│   ├── models.py            # ORM models
+│   ├── routers/
+│   │   ├── assessments.py
+│   │   ├── findings.py
+│   │   ├── reports.py
+│   │   └── tasks.py         # Task dispatch + SSE streaming
+│   └── engine/              # Real Linux audit engine
+│       ├── base.py          # BaseCheck ABC + CheckFinding
+│       ├── registry.py      # Module registry
+│       ├── runner.py        # AuditRunner (async SSE generator)
+│       └── modules/
+│           ├── system/      # kernel_params, user_accounts, file_permissions
+│           ├── network/     # open_ports, firewall_state
+│           ├── auth/        # ssh_config, pam_config
+│           ├── software/    # package_versions, service_config
+│           └── secrets/     # env_files, key_files
+├── ui/                      # React + Vite frontend
+├── reports/                 # Generated report output (local)
+└── start.sh                 # Linux launch script
+```
 
 ---
 
 ## Roadmap
 
-### v0.1.0 — Foundation *(in progress)*
-- [ ] Repository skeleton and project structure
-- [ ] CLI scaffold (`scope audit`, `scope scan`, `scope report`)
-- [ ] Finding data model (severity, status, remediation)
-- [ ] BaseCheck interface and check registry
-- [ ] Config loader and Pydantic schema validation
-- [ ] Console and Markdown reporters
+### v1.1 — Real Engine (current)
+- [x] Real Linux audit engine replacing all simulated output
+- [x] 11 production check modules across 5 categories
+- [x] Live SSE streaming from real module execution
+- [x] Report generation (HTML, Markdown, JSON) to `reports/`
+- [x] Findings persisted to DB after each run
+- [x] Linux-only codebase — all Windows artifacts removed
 
-### v0.2.0 — First Real Checks
-- [ ] OS hardening checks (Linux: sysctl, kernel params)
-- [ ] User account checks (UID 0, empty passwords, sudoers)
-- [ ] File permission checks (world-writable, SUID/SGID)
-- [ ] Open port detection
-- [ ] Basic SSH configuration check
+### v1.2 — Depth and Polish
+- [ ] Root-mode full coverage (shadow, iptables, etc.)
+- [ ] Additional modules: cron jobs, kernel modules, auditd state
+- [ ] Scheduled assessments (systemd timer integration)
+- [ ] Baseline comparison (diff between two run results)
 
-### v0.3.0 — Expanded Coverage
-- [ ] Windows support for system and network checks
-- [ ] Firewall state checks (iptables/nftables, Windows Firewall)
-- [ ] Package version and CVE stub check
-- [ ] Secret/credential file surface detection
-- [ ] HTML report output
-
-### v0.4.0 — Polish and Packaging
-- [ ] PyPI publication
-- [ ] Man page and shell completions
-- [ ] Scheduled audit support
-- [ ] Baseline comparison (diff between two audit results)
+### v1.3 — Hardening Profiles
+- [ ] YAML-configurable scan profiles (minimal, standard, strict)
+- [ ] CIS Benchmark mapping per finding
+- [ ] Risk score calculation from real finding data
 
 ---
 
 ## Contributing
 
-SCOPE is a solo-built open-source project, and contributions are welcome once the foundation is stable.
-
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
+SCOPE is a solo-built open-source project. Contributions are welcome.
 
 Key guidelines:
 - All contributions must remain strictly defensive in nature
-- New checks must include documentation and at least one unit test
-- Follow the existing code style (enforced by Ruff and Mypy)
+- Linux-only — no cross-platform abstractions, no Windows compatibility layers
+- New checks must subclass `BaseCheck`, declare `requires_root`, and implement `is_available()`
+- No `shell=True` in any subprocess call
 
 ---
 
@@ -218,4 +231,4 @@ Key guidelines:
 
 MIT License. See [LICENSE](./LICENSE) for details.
 
-This license does not grant permission to use this tool for unauthorized access to computer systems. See the [Ethical Use Statement](#ethical-use-statement) above.
+This licence does not grant permission to use this tool for unauthorised access to computer systems.

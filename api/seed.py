@@ -178,13 +178,17 @@ def seed_database(db):
         {
             "assessment_id": a_map["Internal Network Scan"].id,
             "severity": "medium",
-            "title": "SMB Signing Disabled on Domain Hosts",
+            "title": "NFS Exports Allow Access from All Hosts",
             "category": "Network",
             "status": "open",
-            "description": "Multiple Windows hosts have SMB signing disabled, enabling relay attacks.",
-            "evidence": "nmap --script smb-security-mode — message_signing: disabled",
-            "remediation_simple": "Enable SMB signing via Group Policy.",
-            "remediation_technical": "GP: Computer Config > Security Settings > 'Digitally sign communications (always)' = Enabled",
+            "description": "An NFS export was found with no host restriction (export to *). "
+                           "Any host on the network can mount and access the exported filesystem.",
+            "evidence": "/etc/exports — /data *(rw,no_root_squash)\n"
+                        "exportfs -v confirms: /data exported to all hosts with rw,no_root_squash",
+            "remediation_simple": "Restrict NFS exports to specific trusted hosts and remove no_root_squash.",
+            "remediation_technical": "# /etc/exports — replace:\n/data *(rw,no_root_squash)\n"
+                                     "# with:\n/data 192.168.1.0/24(rw,root_squash,no_all_squash)\n"
+                                     "exportfs -ra  # reload exports",
             "date_found": datetime(2026, 3, 17, 10, 45, 0),
         },
         # Linux Server Hardening
