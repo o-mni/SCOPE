@@ -70,3 +70,26 @@ def delete_assessment(assessment_id: int, db: Session = Depends(get_db)):
     db.delete(a)
     db.commit()
     return None
+
+
+@router.get("/assessments/{assessment_id}/runs")
+def list_runs(assessment_id: int, db: Session = Depends(get_db)):
+    a = db.query(models.Assessment).filter(models.Assessment.id == assessment_id).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    runs = (
+        db.query(models.Run)
+        .filter(models.Run.assessment_id == assessment_id)
+        .order_by(models.Run.date.desc())
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "date": r.date.isoformat() if r.date else None,
+            "status": r.status,
+            "duration": r.duration or "—",
+            "findingCount": r.finding_count,
+        }
+        for r in runs
+    ]

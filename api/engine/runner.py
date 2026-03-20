@@ -21,6 +21,7 @@ from typing import AsyncIterator
 
 from engine.registry import REGISTRY
 from engine.base import CheckFinding
+from engine.preflight import run_preflight
 
 
 # ── SSE helpers ───────────────────────────────────────────────────────────────
@@ -68,24 +69,38 @@ class AuditRunner:
         self.dry_run = dry_run
 
     async def stream(self) -> AsyncIterator[str]:
-        total = len(self.module_names)
+        total    = len(self.module_names)
         mode_tag = "  [DRY RUN — nothing will be saved]" if self.dry_run else ""
-        euid = os.geteuid()
 
         yield _sse(_evt("task_start", f"Starting audit — {total} module(s){mode_tag}", "▷"))
         await asyncio.sleep(0.05)
 
-        if not self.dry_run and euid != 0:
-            yield _sse(_evt(
-                "info",
-                f"  Running as non-root (UID {euid}) — modules requiring root will be skipped",
-                "·",
-            ))
-            await asyncio.sleep(0.05)
+        # ── Preflight ─────────────────────────────────────────────────────────
+        yield _sse(_evt("preflight_start", "  Preflight checks…", "·"))
+        await asyncio.sleep(0.03)
+
+        loop = asyncio.get_running_loop()
+        preflight = await loop.run_in_executor(None, run_preflight, self.module_names)
+        caps      = preflight.capability_profile
+
+        for evt_type, msg in preflight.to_sse_lines():
+            yield _sse(_evt(evt_type, f"  {msg}", "·"))
+            await asyncio.sleep(0.02)
+
+        if not preflight.passed:
+            for err in preflight.errors:
+                yield _sse(_evt("error", f"  Preflight error: {err}", "✗"))
+            yield _sse(_evt("task_complete", "Audit aborted — preflight failed.", "✗"))
+            yield _sse(json.dumps({"type": "done"}))
+            return
+
+        yield _sse(_divider())
+        await asyncio.sleep(0.05)
 
         # Accumulate (module_name, CheckFinding) for DB persistence
         all_findings: list[tuple[str, CheckFinding]] = []
         errors = 0
+        euid   = caps.euid if caps else os.geteuid()
 
         for i, mod_name in enumerate(self.module_names, 1):
             check_cls = REGISTRY.get(mod_name)
@@ -95,6 +110,11 @@ class AuditRunner:
                 continue
 
             check = check_cls()
+
+            # Inject capability profile so modules can adapt their behaviour
+            if caps:
+                check.capabilities = caps
+
             yield _sse(_evt(
                 "module_start",
                 f"[{i}/{total}]  Running: {mod_name}  —  {check.description}",
@@ -117,7 +137,6 @@ class AuditRunner:
                 continue
 
             # Execute synchronous check in thread pool
-            loop = asyncio.get_running_loop()
             try:
                 findings: list[CheckFinding] = await loop.run_in_executor(None, check.run)
             except Exception as exc:

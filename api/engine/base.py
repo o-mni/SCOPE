@@ -9,7 +9,11 @@ from __future__ import annotations
 
 import shutil
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from engine.capabilities import CapabilityProfile
 
 
 @dataclass
@@ -32,6 +36,11 @@ class BaseCheck(ABC):
     name: str           # dotted module name, e.g. "system.kernel_params"
     description: str    # one-line human description
     requires_root: bool = False
+
+    def __init__(self) -> None:
+        # Injected by AuditRunner before run() is called.
+        # Modules may read this to adapt behaviour based on available tools.
+        self.capabilities: CapabilityProfile | None = None
 
     @abstractmethod
     def run(self) -> list[CheckFinding]:

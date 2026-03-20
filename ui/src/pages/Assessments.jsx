@@ -1,28 +1,35 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Filter, ChevronDown, Trash2 } from 'lucide-react'
 import { StatusBadge } from '../components/shared/Badge'
 import OverflowMenu from '../components/shared/OverflowMenu'
 import ConfirmModal from '../components/shared/ConfirmModal'
 import { useToast } from '../App'
-import { assessments as initialAssessments } from '../data/mockData'
+
+const API = 'http://localhost:8000/api'
 
 function formatDate(ts) {
   if (!ts) return 'Never'
   const d = new Date(ts)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
-    ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  return (
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' ' +
+    d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  )
 }
 
 function CreateModal({ isOpen, onClose, onCreate }) {
   const [form, setForm] = useState({ name: '', description: '', target: '' })
+  const [saving, setSaving] = useState(false)
 
   if (!isOpen) return null
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name.trim()) return
-    onCreate(form)
+    setSaving(true)
+    await onCreate(form)
+    setSaving(false)
     setForm({ name: '', description: '', target: '' })
   }
 
@@ -32,7 +39,7 @@ function CreateModal({ isOpen, onClose, onCreate }) {
       style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
     >
       <div
-        className="w-full max-w-lg rounded-2xl shadow-2xl mx-4 animate-fade-in"
+        className="w-full max-w-lg rounded-2xl shadow-2xl mx-4"
         style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}
       >
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #2A2D3A' }}>
@@ -50,47 +57,31 @@ function CreateModal({ isOpen, onClose, onCreate }) {
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="e.g. Web Application Audit"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors"
-                style={{
-                  backgroundColor: '#0F1117',
-                  border: '1px solid #2A2D3A',
-                  color: '#E8EAF0',
-                }}
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A', color: '#E8EAF0' }}
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#6B7280' }}>
-                Description
-              </label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#6B7280' }}>Description</label>
               <textarea
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="What is this assessment for?"
                 rows={3}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors resize-none"
-                style={{
-                  backgroundColor: '#0F1117',
-                  border: '1px solid #2A2D3A',
-                  color: '#E8EAF0',
-                }}
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A', color: '#E8EAF0' }}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#6B7280' }}>
-                Target Scope
-              </label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#6B7280' }}>Target Scope</label>
               <input
                 type="text"
                 value={form.target}
                 onChange={e => setForm(f => ({ ...f, target: e.target.value }))}
-                placeholder="e.g. 192.168.1.0/24, hostname, or URL"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors"
-                style={{
-                  backgroundColor: '#0F1117',
-                  border: '1px solid #2A2D3A',
-                  color: '#E8EAF0',
-                }}
+                placeholder="localhost / 127.0.0.1"
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A', color: '#E8EAF0' }}
               />
             </div>
           </div>
@@ -98,17 +89,18 @@ function CreateModal({ isOpen, onClose, onCreate }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
+              className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5"
               style={{ color: '#E8EAF0', border: '1px solid #2A2D3A' }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              style={{ backgroundColor: '#4F8EF7', color: '#fff' }}
+              disabled={saving}
+              className="px-4 py-2 rounded-lg text-sm font-medium"
+              style={{ backgroundColor: '#4F8EF7', color: '#fff', opacity: saving ? 0.6 : 1 }}
             >
-              Create Assessment
+              {saving ? 'Creating…' : 'Create Assessment'}
             </button>
           </div>
         </form>
@@ -120,14 +112,30 @@ function CreateModal({ isOpen, onClose, onCreate }) {
 export default function Assessments() {
   const navigate = useNavigate()
   const { addToast } = useToast()
-  const [assessments, setAssessments] = useState(initialAssessments)
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('all')
-  const [sort, setSort] = useState('lastRun')
-  const [selected, setSelected] = useState([])
-  const [showCreate, setShowCreate] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState(null)
+
+  const [assessments, setAssessments] = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [search, setSearch]           = useState('')
+  const [filter, setFilter]           = useState('all')
+  const [sort, setSort]               = useState('lastRun')
+  const [selected, setSelected]       = useState([])
+  const [showCreate, setShowCreate]   = useState(false)
+  const [deleteTarget, setDeleteTarget]   = useState(null)
   const [showBulkDelete, setShowBulkDelete] = useState(false)
+
+  const fetchAssessments = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/assessments`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setAssessments(await res.json())
+    } catch (err) {
+      addToast(`Failed to load assessments: ${err.message}`, 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [addToast])
+
+  useEffect(() => { fetchAssessments() }, [fetchAssessments])
 
   const filtered = assessments
     .filter(a => {
@@ -146,47 +154,47 @@ export default function Assessments() {
       return 0
     })
 
-  const toggleSelect = (id) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
+  const toggleSelect    = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  const toggleSelectAll = () => setSelected(selected.length === filtered.length ? [] : filtered.map(a => a.id))
 
-  const toggleSelectAll = () => {
-    if (selected.length === filtered.length) {
-      setSelected([])
-    } else {
-      setSelected(filtered.map(a => a.id))
+  const handleCreate = async (form) => {
+    try {
+      const res = await fetch(`${API}/assessments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const created = await res.json()
+      setAssessments(prev => [created, ...prev])
+      setShowCreate(false)
+      addToast(`Assessment "${form.name}" created`, 'success')
+    } catch (err) {
+      addToast(`Failed to create assessment: ${err.message}`, 'error')
     }
   }
 
-  const handleCreate = (form) => {
-    const newA = {
-      id: Date.now(),
-      name: form.name,
-      description: form.description,
-      target: form.target,
-      status: 'draft',
-      lastRun: null,
-      findingCount: 0,
-      criticalCount: 0,
-      createdAt: new Date().toISOString(),
+  const handleDelete = async (assessment) => {
+    try {
+      const res = await fetch(`${API}/assessments/${assessment.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setAssessments(prev => prev.filter(a => a.id !== assessment.id))
+      setDeleteTarget(null)
+      addToast(`"${assessment.name}" deleted`, 'success')
+    } catch (err) {
+      addToast(`Failed to delete: ${err.message}`, 'error')
     }
-    setAssessments(prev => [newA, ...prev])
-    setShowCreate(false)
-    addToast(`Assessment "${form.name}" created successfully`, 'success')
   }
 
-  const handleDelete = (assessment) => {
-    setAssessments(prev => prev.filter(a => a.id !== assessment.id))
-    setDeleteTarget(null)
-    addToast(`"${assessment.name}" deleted`, 'success')
-  }
-
-  const handleBulkDelete = () => {
-    const names = assessments.filter(a => selected.includes(a.id)).map(a => a.name)
+  const handleBulkDelete = async () => {
+    const targets = assessments.filter(a => selected.includes(a.id))
+    await Promise.all(targets.map(a =>
+      fetch(`${API}/assessments/${a.id}`, { method: 'DELETE' }).catch(() => {})
+    ))
     setAssessments(prev => prev.filter(a => !selected.includes(a.id)))
     setSelected([])
     setShowBulkDelete(false)
-    addToast(`${names.length} assessment${names.length > 1 ? 's' : ''} deleted`, 'success')
+    addToast(`${targets.length} assessment${targets.length !== 1 ? 's' : ''} deleted`, 'success')
   }
 
   return (
@@ -196,12 +204,12 @@ export default function Assessments() {
         <div>
           <h1 className="text-xl font-semibold" style={{ color: '#E8EAF0' }}>Assessments</h1>
           <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>
-            {assessments.length} assessment{assessments.length !== 1 ? 's' : ''} total
+            {loading ? 'Loading…' : `${assessments.length} assessment${assessments.length !== 1 ? 's' : ''} total`}
           </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:brightness-110"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium hover:brightness-110"
           style={{ backgroundColor: '#4F8EF7', color: '#fff' }}
         >
           <Plus size={16} />
@@ -226,17 +234,9 @@ export default function Assessments() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer"
-            style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}
-          >
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}>
             <Filter size={14} style={{ color: '#6B7280' }} />
-            <select
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="bg-transparent outline-none text-sm cursor-pointer"
-              style={{ color: '#E8EAF0' }}
-            >
+            <select value={filter} onChange={e => setFilter(e.target.value)} className="bg-transparent outline-none text-sm cursor-pointer" style={{ color: '#E8EAF0' }}>
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
               <option value="complete">Complete</option>
@@ -244,17 +244,9 @@ export default function Assessments() {
               <option value="failed">Failed</option>
             </select>
           </div>
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer"
-            style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}
-          >
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}>
             <ChevronDown size={14} style={{ color: '#6B7280' }} />
-            <select
-              value={sort}
-              onChange={e => setSort(e.target.value)}
-              className="bg-transparent outline-none text-sm cursor-pointer"
-              style={{ color: '#E8EAF0' }}
-            >
+            <select value={sort} onChange={e => setSort(e.target.value)} className="bg-transparent outline-none text-sm cursor-pointer" style={{ color: '#E8EAF0' }}>
               <option value="lastRun">Sort: Last Run</option>
               <option value="name">Sort: Name</option>
               <option value="findings">Sort: Findings</option>
@@ -265,16 +257,11 @@ export default function Assessments() {
 
       {/* Bulk action bar */}
       {selected.length > 0 && (
-        <div
-          className="flex items-center justify-between px-4 py-2.5 rounded-xl animate-fade-in"
-          style={{ backgroundColor: 'rgba(79,142,247,0.08)', border: '1px solid rgba(79,142,247,0.2)' }}
-        >
-          <span className="text-sm font-medium" style={{ color: '#4F8EF7' }}>
-            {selected.length} selected
-          </span>
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(79,142,247,0.08)', border: '1px solid rgba(79,142,247,0.2)' }}>
+          <span className="text-sm font-medium" style={{ color: '#4F8EF7' }}>{selected.length} selected</span>
           <button
             onClick={() => setShowBulkDelete(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium"
             style={{ backgroundColor: 'rgba(229,83,75,0.15)', color: '#E5534B' }}
           >
             <Trash2 size={14} />
@@ -284,26 +271,13 @@ export default function Assessments() {
       )}
 
       {/* Table */}
-      <div
-        className="rounded-xl overflow-hidden"
-        style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}
-      >
-        {/* Table header */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}>
         <div
           className="grid items-center px-4 py-3 text-xs font-semibold uppercase tracking-wider"
-          style={{
-            gridTemplateColumns: '40px 1fr 120px 180px 80px 60px 40px',
-            borderBottom: '1px solid #2A2D3A',
-            color: '#6B7280',
-          }}
+          style={{ gridTemplateColumns: '40px 1fr 120px 180px 80px 60px 40px', borderBottom: '1px solid #2A2D3A', color: '#6B7280' }}
         >
           <div>
-            <input
-              type="checkbox"
-              checked={filtered.length > 0 && selected.length === filtered.length}
-              onChange={toggleSelectAll}
-              className="accent-primary cursor-pointer"
-            />
+            <input type="checkbox" checked={filtered.length > 0 && selected.length === filtered.length} onChange={toggleSelectAll} className="accent-primary cursor-pointer" />
           </div>
           <div>Name</div>
           <div>Status</div>
@@ -313,52 +287,36 @@ export default function Assessments() {
           <div />
         </div>
 
-        {/* Rows */}
-        {filtered.length === 0 ? (
-          <div className="py-16 text-center">
-            <p style={{ color: '#6B7280' }}>No assessments found</p>
+        {loading ? (
+          <div className="py-16 text-center" style={{ color: '#6B7280' }}>Loading…</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center" style={{ color: '#6B7280' }}>
+            {assessments.length === 0 ? 'No assessments yet. Create one to get started.' : 'No assessments match your filter.'}
           </div>
         ) : (
           filtered.map(a => (
             <div
               key={a.id}
-              className="grid items-center px-4 py-3.5 table-row-hover cursor-pointer transition-colors"
-              style={{
-                gridTemplateColumns: '40px 1fr 120px 180px 80px 60px 40px',
-                borderBottom: '1px solid #2A2D3A',
-              }}
+              className="grid items-center px-4 py-3.5 table-row-hover cursor-pointer"
+              style={{ gridTemplateColumns: '40px 1fr 120px 180px 80px 60px 40px', borderBottom: '1px solid #2A2D3A' }}
               onClick={() => navigate(`/assessments/${a.id}`)}
             >
               <div onClick={e => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(a.id)}
-                  onChange={() => toggleSelect(a.id)}
-                  className="accent-primary cursor-pointer"
-                />
+                <input type="checkbox" checked={selected.includes(a.id)} onChange={() => toggleSelect(a.id)} className="accent-primary cursor-pointer" />
               </div>
               <div>
                 <p className="text-sm font-medium" style={{ color: '#E8EAF0' }}>{a.name}</p>
                 <p className="text-xs mt-0.5 truncate" style={{ color: '#6B7280', maxWidth: '90%' }}>{a.description}</p>
               </div>
-              <div>
-                <StatusBadge status={a.status} />
-              </div>
-              <div className="text-sm" style={{ color: '#6B7280' }}>
-                {formatDate(a.lastRun)}
-              </div>
-              <div className="text-sm font-medium" style={{ color: '#E8EAF0' }}>
-                {a.findingCount}
-              </div>
-              <div className="text-sm font-semibold" style={{ color: a.criticalCount > 0 ? '#E5534B' : '#6B7280' }}>
-                {a.criticalCount}
-              </div>
+              <div><StatusBadge status={a.status} /></div>
+              <div className="text-sm" style={{ color: '#6B7280' }}>{formatDate(a.lastRun)}</div>
+              <div className="text-sm font-medium" style={{ color: '#E8EAF0' }}>{a.findingCount}</div>
+              <div className="text-sm font-semibold" style={{ color: a.criticalCount > 0 ? '#E5534B' : '#6B7280' }}>{a.criticalCount}</div>
               <div onClick={e => e.stopPropagation()}>
                 <OverflowMenu
                   items={[
                     { label: 'View', onClick: () => navigate(`/assessments/${a.id}`) },
-                    { label: 'Edit', onClick: () => {} },
-                    { label: 'Run Now', onClick: () => addToast(`Starting run for "${a.name}"...`, 'info') },
+                    { label: 'Run Now', onClick: () => navigate(`/assessments/${a.id}`) },
                     { divider: true },
                     { label: 'Delete', danger: true, onClick: () => setDeleteTarget(a) },
                   ]}
@@ -369,33 +327,22 @@ export default function Assessments() {
         )}
       </div>
 
-      {/* Create Modal */}
-      <CreateModal
-        isOpen={showCreate}
-        onClose={() => setShowCreate(false)}
-        onCreate={handleCreate}
-      />
+      <CreateModal isOpen={showCreate} onClose={() => setShowCreate(false)} onCreate={handleCreate} />
 
-      {/* Delete Confirm */}
       {deleteTarget && (
         <ConfirmModal
           isOpen={true}
           onClose={() => setDeleteTarget(null)}
           onConfirm={() => handleDelete(deleteTarget)}
           title={`Delete "${deleteTarget.name}"?`}
-          description="This will permanently delete the assessment and all associated data."
-          items={[
-            `Assessment: ${deleteTarget.name}`,
-            `${deleteTarget.findingCount} findings`,
-            `All run history`,
-          ]}
+          description="This will permanently delete the assessment and all associated findings and runs."
+          items={[`Assessment: ${deleteTarget.name}`, `${deleteTarget.findingCount} findings`, 'All run history']}
           requireTyping={deleteTarget.findingCount > 0}
           confirmName={deleteTarget.name}
           confirmLabel="Delete Assessment"
         />
       )}
 
-      {/* Bulk Delete */}
       <ConfirmModal
         isOpen={showBulkDelete}
         onClose={() => setShowBulkDelete(false)}
