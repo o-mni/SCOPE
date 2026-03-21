@@ -4,6 +4,7 @@ import { Plus, Search, Filter, ChevronDown, Trash2 } from 'lucide-react'
 import { StatusBadge } from '../components/shared/Badge'
 import OverflowMenu from '../components/shared/OverflowMenu'
 import ConfirmModal from '../components/shared/ConfirmModal'
+import CreateAssessmentWizard from '../components/CreateAssessmentWizard'
 import { useToast } from '../App'
 
 const API = 'http://localhost:8000/api'
@@ -18,97 +19,6 @@ function formatDate(ts) {
   )
 }
 
-function CreateModal({ isOpen, onClose, onCreate }) {
-  const [form, setForm] = useState({ name: '', description: '', target: '' })
-  const [saving, setSaving] = useState(false)
-
-  if (!isOpen) return null
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!form.name.trim()) return
-    setSaving(true)
-    await onCreate(form)
-    setSaving(false)
-    setForm({ name: '', description: '', target: '' })
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-    >
-      <div
-        className="w-full max-w-lg rounded-2xl shadow-2xl mx-4"
-        style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}
-      >
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #2A2D3A' }}>
-          <h2 className="text-base font-semibold" style={{ color: '#E8EAF0' }}>New Assessment</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-white transition-colors">✕</button>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div className="px-6 py-5 space-y-4">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#6B7280' }}>
-                Assessment Name <span style={{ color: '#E5534B' }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="e.g. Web Application Audit"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A', color: '#E8EAF0' }}
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#6B7280' }}>Description</label>
-              <textarea
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                placeholder="What is this assessment for?"
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
-                style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A', color: '#E8EAF0' }}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#6B7280' }}>Target Scope</label>
-              <input
-                type="text"
-                value={form.target}
-                onChange={e => setForm(f => ({ ...f, target: e.target.value }))}
-                placeholder="localhost / 127.0.0.1"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A', color: '#E8EAF0' }}
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-between px-6 py-4" style={{ borderTop: '1px solid #2A2D3A' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5"
-              style={{ color: '#E8EAF0', border: '1px solid #2A2D3A' }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ backgroundColor: '#4F8EF7', color: '#fff', opacity: saving ? 0.6 : 1 }}
-            >
-              {saving ? 'Creating…' : 'Create Assessment'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
 export default function Assessments() {
   const navigate = useNavigate()
   const { addToast } = useToast()
@@ -119,7 +29,7 @@ export default function Assessments() {
   const [filter, setFilter]           = useState('all')
   const [sort, setSort]               = useState('lastRun')
   const [selected, setSelected]       = useState([])
-  const [showCreate, setShowCreate]   = useState(false)
+  const [showWizard, setShowWizard]   = useState(false)
   const [deleteTarget, setDeleteTarget]   = useState(null)
   const [showBulkDelete, setShowBulkDelete] = useState(false)
 
@@ -157,23 +67,6 @@ export default function Assessments() {
   const toggleSelect    = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   const toggleSelectAll = () => setSelected(selected.length === filtered.length ? [] : filtered.map(a => a.id))
 
-  const handleCreate = async (form) => {
-    try {
-      const res = await fetch(`${API}/assessments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const created = await res.json()
-      setAssessments(prev => [created, ...prev])
-      setShowCreate(false)
-      addToast(`Assessment "${form.name}" created`, 'success')
-    } catch (err) {
-      addToast(`Failed to create assessment: ${err.message}`, 'error')
-    }
-  }
-
   const handleDelete = async (assessment) => {
     try {
       const res = await fetch(`${API}/assessments/${assessment.id}`, { method: 'DELETE' })
@@ -208,7 +101,7 @@ export default function Assessments() {
           </p>
         </div>
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={() => setShowWizard(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium hover:brightness-110"
           style={{ backgroundColor: '#4F8EF7', color: '#fff' }}
         >
@@ -327,7 +220,7 @@ export default function Assessments() {
         )}
       </div>
 
-      <CreateModal isOpen={showCreate} onClose={() => setShowCreate(false)} onCreate={handleCreate} />
+      <CreateAssessmentWizard isOpen={showWizard} onClose={() => { setShowWizard(false); fetchAssessments() }} />
 
       {deleteTarget && (
         <ConfirmModal

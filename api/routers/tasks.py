@@ -102,6 +102,107 @@ async def gen_run_module(task_id: str, module: str, assessment_id=None,
         yield chunk
 
 
+async def gen_run_task(sse_task_id: str, module: str, assessment_id=None,
+                       checklist_task_id=None, verbose: bool = False):
+    """Run a single checklist task module and update its state in the DB."""
+    from engine.registry import REGISTRY
+    if module not in REGISTRY:
+        yield _sse(_evt("error", f"Unknown module: '{module}'", "✗"))
+        yield _sse(json.dumps({"type": "done"}))
+        return
+
+    runner = AuditRunner(
+        module_names=[module],
+        assessment_id=assessment_id,
+        task_id=checklist_task_id,
+        verbose=verbose,
+        dry_run=False,
+    )
+    async for chunk in runner.stream():
+        yield chunk
+
+
+async def gen_run_assessment(sse_task_id: str, assessment_id: int):
+    """Run all modules stored on the assessment, updating all checklist tasks."""
+    import json as _json
+    from database import SessionLocal
+    import models as m
+
+    db = SessionLocal()
+    try:
+        a = db.query(m.Assessment).filter_by(id=assessment_id).first()
+        if not a:
+            yield _sse(_evt("error", "Assessment not found", "✗"))
+            yield _sse(_json.dumps({"type": "done"}))
+            return
+        module_names = _json.loads(a.module_names or "[]")
+        tasks = db.query(m.AssessmentTask).filter_by(assessment_id=assessment_id).all()
+        task_id_map = {t.module_name: t.id for t in tasks}
+    finally:
+        db.close()
+
+    if not module_names:
+        yield _sse(_evt("error", "No modules configured for this assessment. Recreate it using the wizard.", "✗"))
+        yield _sse(_json.dumps({"type": "done"}))
+        return
+
+    runner = AuditRunner(
+        module_names=module_names,
+        assessment_id=assessment_id,
+        task_id_map=task_id_map or None,
+    )
+    async for chunk in runner.stream():
+        yield chunk
+
+
+async def gen_run_domain(sse_task_id: str, assessment_id: int, domain_id: str):
+    """Run all modules in a specific domain for this assessment."""
+    import json as _json
+    from database import SessionLocal
+    from engine.domains import DOMAINS
+    import models as m
+
+    db = SessionLocal()
+    try:
+        a = db.query(m.Assessment).filter_by(id=assessment_id).first()
+        if not a:
+            yield _sse(_evt("error", "Assessment not found", "✗"))
+            yield _sse(_json.dumps({"type": "done"}))
+            return
+
+        assessment_modules = set(_json.loads(a.module_names or "[]"))
+        domain = next((d for d in DOMAINS if d["id"] == domain_id), None)
+        if not domain:
+            yield _sse(_evt("error", f"Domain not found: {domain_id}", "✗"))
+            yield _sse(_json.dumps({"type": "done"}))
+            return
+
+        # Only run modules that belong to both this domain and this assessment
+        module_names = [mod for mod in domain["modules"] if mod in assessment_modules]
+        if not module_names:
+            yield _sse(_evt("error", f"No modules from domain '{domain['label']}' are in this assessment.", "✗"))
+            yield _sse(_json.dumps({"type": "done"}))
+            return
+
+        tasks = (
+            db.query(m.AssessmentTask)
+              .filter_by(assessment_id=assessment_id)
+              .filter(m.AssessmentTask.module_name.in_(module_names))
+              .all()
+        )
+        task_id_map = {t.module_name: t.id for t in tasks}
+    finally:
+        db.close()
+
+    runner = AuditRunner(
+        module_names=module_names,
+        assessment_id=assessment_id,
+        task_id_map=task_id_map or None,
+    )
+    async for chunk in runner.stream():
+        yield chunk
+
+
 async def gen_refresh_findings(task_id: str):
     """Re-aggregate finding stats and update dashboard KPIs."""
     from database import SessionLocal
@@ -384,7 +485,23 @@ async def stream_task(task_id: str):
     task_type = body.get("task")
     assessment_id = body.get("assessmentId")
 
-    if task_type == "run_playbook":
+    if task_type == "run_assessment":
+        gen = gen_run_assessment(task_id, assessment_id=assessment_id)
+    elif task_type == "run_domain":
+        gen = gen_run_domain(
+            task_id,
+            assessment_id=assessment_id,
+            domain_id=body.get("domainId", ""),
+        )
+    elif task_type == "run_task":
+        gen = gen_run_task(
+            task_id,
+            body.get("module", ""),
+            assessment_id=assessment_id,
+            checklist_task_id=body.get("checklistTaskId"),
+            verbose=body.get("verbose", False),
+        )
+    elif task_type == "run_playbook":
         gen = gen_run_playbook(
             task_id,
             body.get("playbook", "linux-baseline"),

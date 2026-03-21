@@ -50,27 +50,44 @@ class AuditRunner:
 
     Parameters
     ----------
-    module_names : list of dotted module names, e.g. ["auth.ssh_config"]
-    assessment_id : if provided, findings are persisted to the DB
-    verbose : emit raw evidence lines after each finding
-    dry_run : enumerate modules but do not execute or persist anything
+    module_names    : list of dotted module names, e.g. ["auth.ssh_config"]
+    assessment_id   : if provided, findings are persisted to the DB
+    task_id         : if provided (AssessmentTask.id), that single task's
+                      state is updated and its findings are linked to it
+    task_id_map     : module_name → AssessmentTask.id mapping for multi-task
+                      runs (Run All / Run Domain). Mutually exclusive with
+                      task_id — if both are set, task_id_map takes precedence.
+    verbose         : emit raw evidence lines after each finding
+    dry_run         : enumerate modules but do not execute or persist anything
     """
 
     def __init__(
         self,
         module_names: list[str],
         assessment_id: int | None = None,
+        task_id: int | None = None,
+        task_id_map: dict[str, int] | None = None,
         verbose: bool = False,
         dry_run: bool = False,
     ) -> None:
-        self.module_names = module_names
+        self.module_names  = module_names
         self.assessment_id = assessment_id
-        self.verbose = verbose
-        self.dry_run = dry_run
+        self.task_id       = task_id
+        self.task_id_map   = task_id_map
+        self.verbose       = verbose
+        self.dry_run       = dry_run
+
+    # ── Convenience: resolve task_id for a given module ───────────────────────
+
+    def _resolve_task_id(self, mod_name: str) -> int | None:
+        if self.task_id_map:
+            return self.task_id_map.get(mod_name)
+        return self.task_id
 
     async def stream(self) -> AsyncIterator[str]:
-        total    = len(self.module_names)
-        mode_tag = "  [DRY RUN — nothing will be saved]" if self.dry_run else ""
+        total     = len(self.module_names)
+        mode_tag  = "  [DRY RUN — nothing will be saved]" if self.dry_run else ""
+        run_start = datetime.utcnow()
 
         yield _sse(_evt("task_start", f"Starting audit — {total} module(s){mode_tag}", "▷"))
         await asyncio.sleep(0.05)
@@ -97,6 +114,17 @@ class AuditRunner:
         yield _sse(_divider())
         await asyncio.sleep(0.05)
 
+        # Mark relevant checklist tasks as running
+        if not self.dry_run:
+            if self.task_id is not None:
+                await loop.run_in_executor(
+                    None, self._set_task_status, [self.task_id], "running"
+                )
+            elif self.task_id_map:
+                await loop.run_in_executor(
+                    None, self._set_task_status, list(self.task_id_map.values()), "running"
+                )
+
         # Accumulate (module_name, CheckFinding) for DB persistence
         all_findings: list[tuple[str, CheckFinding]] = []
         errors = 0
@@ -111,7 +139,6 @@ class AuditRunner:
 
             check = check_cls()
 
-            # Inject capability profile so modules can adapt their behaviour
             if caps:
                 check.capabilities = caps
 
@@ -126,22 +153,22 @@ class AuditRunner:
                 yield _sse(_evt("dry_run", f"  DRY RUN: {mod_name} would execute", "○"))
                 continue
 
-            # Privilege gate
             if check.requires_root and euid != 0:
                 yield _sse(_evt("info", f"  Skipped — requires root (run SCOPE as root for full coverage)", "○"))
                 continue
 
-            # Tool availability gate
             if not check.is_available():
                 yield _sse(_evt("info", f"  Skipped — required tools/files not available on this system", "○"))
                 continue
 
-            # Execute synchronous check in thread pool
             try:
                 findings: list[CheckFinding] = await loop.run_in_executor(None, check.run)
             except Exception as exc:
                 yield _sse(_evt("error", f"  Error in {mod_name}: {exc}", "✗"))
                 errors += 1
+                t_id = self._resolve_task_id(mod_name)
+                if t_id is not None:
+                    await loop.run_in_executor(None, self._set_task_status, [t_id], "failed")
                 continue
 
             if findings:
@@ -151,7 +178,6 @@ class AuditRunner:
                     yield _sse(_evt(etype, f"  ⚑  {finding.title}  [{sev_upper}]", "⚑"))
                     if self.verbose:
                         await asyncio.sleep(0.03)
-                        # Truncate evidence to keep SSE lines readable
                         ev_line = finding.evidence.split("\n")[0][:120]
                         yield _sse(_evt("info", f"  └─  {ev_line}", "·"))
                 all_findings.extend((mod_name, f) for f in findings)
@@ -167,7 +193,7 @@ class AuditRunner:
         if not self.dry_run and self.assessment_id is not None:
             yield _sse(_evt("info", "  Persisting findings to database...", "·"))
             try:
-                self._persist(all_findings)
+                self._persist(all_findings, run_start)
                 yield _sse(_evt("info", "  Findings saved.", "·"))
             except Exception as exc:
                 yield _sse(_evt("error", f"  Failed to save findings: {exc}", "✗"))
@@ -187,52 +213,124 @@ class AuditRunner:
 
         yield _sse(json.dumps({"type": "done"}))
 
-    # ── DB persistence (synchronous helper, called from async context) ─────────
+    # ── DB helpers (synchronous, called from async via run_in_executor) ────────
 
-    def _persist(self, all_findings: list[tuple[str, CheckFinding]]) -> None:
+    def _set_task_status(self, task_ids: list[int], status: str) -> None:
         from database import SessionLocal
-        import models
+        import models as m
 
         db = SessionLocal()
         try:
-            now = datetime.utcnow()
+            for t_id in task_ids:
+                task = db.query(m.AssessmentTask).filter_by(id=t_id).first()
+                if task:
+                    task.status = status
+                    task.updated_at = datetime.utcnow()
+            db.commit()
+        finally:
+            db.close()
 
-            for _mod_name, f in all_findings:
-                db.add(models.Finding(
-                    assessment_id=self.assessment_id,
-                    severity=f.severity,
-                    title=f.title,
-                    category=f.category,
-                    description=f.description,
-                    evidence=f.evidence,
-                    remediation_simple=f.remediation_simple,
-                    remediation_technical=f.remediation_technical,
-                    status="open",
-                    date_found=now,
+    def _persist(self, all_findings: list[tuple[str, CheckFinding]], run_start: datetime | None = None) -> None:
+        from database import SessionLocal
+        import models as m
+
+        db = SessionLocal()
+        now   = datetime.utcnow()
+        start = run_start or now
+
+        try:
+            # ── Save findings ──────────────────────────────────────────────────
+            for mod_name, f in all_findings:
+                t_id = self._resolve_task_id(mod_name)
+                db.add(m.Finding(
+                    assessment_id         = self.assessment_id,
+                    task_id               = t_id,
+                    severity              = f.severity,
+                    title                 = f.title,
+                    category              = f.category,
+                    description           = f.description,
+                    evidence              = f.evidence,
+                    remediation_simple    = f.remediation_simple,
+                    remediation_technical = f.remediation_technical,
+                    status                = "open",
+                    date_found            = now,
                 ))
 
-            assessment = db.query(models.Assessment).filter(
-                models.Assessment.id == self.assessment_id
+            # ── Update assessment ──────────────────────────────────────────────
+            assessment = db.query(m.Assessment).filter(
+                m.Assessment.id == self.assessment_id
             ).first()
             if assessment:
                 assessment.last_run = now
-                assessment.status = "active"
+                assessment.status   = "active"
 
+            # ── Update checklist task(s) ───────────────────────────────────────
+            duration_ms = int((now - start).total_seconds() * 1000)
+
+            if self.task_id is not None:
+                # Single-task run
+                task = db.query(m.AssessmentTask).filter_by(id=self.task_id).first()
+                if task:
+                    task.status        = "completed"
+                    task.finding_count = sum(1 for mn, _ in all_findings if self.task_id_map is None)
+                    task.last_run_at   = now
+                    task.updated_at    = now
+
+                db.add(m.TaskRun(
+                    task_id       = self.task_id,
+                    assessment_id = self.assessment_id,
+                    triggered_by  = "manual",
+                    started_at    = start,
+                    completed_at  = now,
+                    status        = "completed",
+                    finding_count = len(all_findings),
+                    duration_ms   = duration_ms,
+                ))
+
+            elif self.task_id_map:
+                # Multi-task run — update each module's task independently
+                module_finding_counts: dict[str, int] = {}
+                for mod_name, _ in all_findings:
+                    module_finding_counts[mod_name] = module_finding_counts.get(mod_name, 0) + 1
+
+                executed_modules = {mn for mn in self.module_names}
+                for mod_name, t_id in self.task_id_map.items():
+                    if mod_name not in executed_modules:
+                        continue
+                    task = db.query(m.AssessmentTask).filter_by(id=t_id).first()
+                    if task:
+                        task.status        = "completed"
+                        task.finding_count = module_finding_counts.get(mod_name, 0)
+                        task.last_run_at   = now
+                        task.updated_at    = now
+
+                    db.add(m.TaskRun(
+                        task_id       = t_id,
+                        assessment_id = self.assessment_id,
+                        triggered_by  = "auto",
+                        started_at    = start,
+                        completed_at  = now,
+                        status        = "completed",
+                        finding_count = module_finding_counts.get(mod_name, 0),
+                        duration_ms   = duration_ms,
+                    ))
+
+            # ── Summary run record ─────────────────────────────────────────────
             has_critical = any(f.severity == "critical" for _, f in all_findings)
-            db.add(models.Run(
-                assessment_id=self.assessment_id,
-                date=now,
-                status="complete",
-                finding_count=len(all_findings),
+            db.add(m.Run(
+                assessment_id = self.assessment_id,
+                date          = now,
+                status        = "complete",
+                finding_count = len(all_findings),
             ))
 
-            db.add(models.ActivityEvent(
-                type="run_complete",
-                message=f"Audit run completed: {len(all_findings)} finding(s)",
-                detail=f"{len(self.module_names)} modules executed",
-                timestamp=now,
-                icon="check",
-                color="danger" if has_critical else "success",
+            db.add(m.ActivityEvent(
+                type      = "run_complete",
+                message   = f"Audit run completed: {len(all_findings)} finding(s)",
+                detail    = f"{len(self.module_names)} modules executed",
+                timestamp = now,
+                icon      = "check",
+                color     = "danger" if has_critical else "success",
             ))
 
             db.commit()

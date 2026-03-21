@@ -1,14 +1,18 @@
 import asyncio
 
 from fastapi import FastAPI
+import migrate
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base, get_db
 from sqlalchemy.orm import Session
 from fastapi import Depends
 import models
 
-# Create tables
+# Create new tables (idempotent)
 Base.metadata.create_all(bind=engine)
+
+# Add columns to existing tables that predate this schema version
+migrate.run_migrations()
 
 app = FastAPI(title="SCOPE API", version="1.0.0")
 
@@ -27,13 +31,14 @@ app.add_middleware(
 )
 
 # Import routers
-from routers import assessments, findings, reports, tasks
+from routers import assessments, findings, reports, tasks, domains
 from routers import terminal
 
 app.include_router(assessments.router, prefix="/api")
 app.include_router(findings.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
+app.include_router(domains.router, prefix="/api")
 app.include_router(terminal.router, prefix="/api")
 
 
