@@ -540,7 +540,7 @@ export default function CreateAssessmentWizard({ isOpen, onClose }) {
     if (!isOpen) return
     Promise.all([
       fetch(`${API}/domains`).then(r => r.json()).catch(() => []),
-      fetch(`${API}/templates`).then(r => r.json()).catch(() => []),
+      fetch(`${API}/module-templates`).then(r => r.json()).catch(() => []),
     ]).then(([d, t]) => { setDomains(d); setTemplates(t) })
   }, [isOpen])
 

@@ -33,6 +33,12 @@ def run_migrations() -> None:
         "TEXT",
     )
 
+    # v1.3 — template system
+    _add_column_if_missing("assessments", "strategy_template_id", "TEXT")
+    _add_column_if_missing("reports", "template_id", "TEXT")
+    _add_column_if_missing("reports", "report_type", "TEXT")
+    _add_column_if_missing("reports", "file_path", "TEXT")
+
 
 def _add_column_if_missing(table: str, column: str, column_def: str) -> None:
     stmt = f"ALTER TABLE {table} ADD COLUMN {column} {column_def}"

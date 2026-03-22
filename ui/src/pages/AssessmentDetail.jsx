@@ -4,7 +4,7 @@ import {
   ArrowLeft, Play, Square, Download, Trash2, ChevronRight,
   ChevronDown, RotateCcw, CheckCircle2, SkipForward, NotebookPen,
   ShieldCheck, AlertCircle, Network, Shield, Users, Layers, Key,
-  PlayCircle,
+  PlayCircle, FileText, Map, ExternalLink, RefreshCw,
 } from 'lucide-react'
 import {
   StatusBadge, SeverityBadge, FindingStatusBadge, RunStatusBadge,
@@ -722,6 +722,206 @@ function DomainSection({ domainId, tasks, assessmentId, onRefresh }) {
   )
 }
 
+// ── Report / Strategy tab ───────────────────────────────────────────────────
+
+function ReportTab({ assessment, reportType, addToast }) {
+  const [templates,     setTemplates]     = useState([])
+  const [selectedId,    setSelectedId]    = useState(null)
+  const [generating,    setGenerating]    = useState(false)
+  const [lastReport,    setLastReport]    = useState(null)
+
+  const defaultKey = reportType === 'report' ? 'templateId' : 'strategyTemplateId'
+  const filterType = reportType === 'report' ? 'report' : 'strategy'
+  const labelTitle = reportType === 'report' ? 'Security Assessment Report' : 'Strategy Plan'
+  const labelIcon  = reportType === 'report' ? FileText : Map
+
+  useEffect(() => {
+    fetch(`${API}/templates`)
+      .then(r => r.ok ? r.json() : { templates: [] })
+      .then(data => {
+        const filtered = (data.templates || []).filter(
+          t => t.templateType === filterType || t.templateType === 'both'
+        )
+        setTemplates(filtered)
+        // Pre-select from assessment or fall back to first
+        const saved = assessment[defaultKey]
+        if (saved && filtered.find(t => t.id === saved)) {
+          setSelectedId(saved)
+        } else if (filtered.length > 0) {
+          setSelectedId(filtered[0].id)
+        }
+      })
+      .catch(() => {})
+  }, [assessment.id, reportType])
+
+  const handleGenerate = async () => {
+    if (!selectedId) return
+    setGenerating(true)
+    try {
+      const res = await fetch(`${API}/reports/render`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assessment_id: assessment.id,
+          template_id:   selectedId,
+          report_type:   reportType,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || `HTTP ${res.status}`)
+      }
+      const report = await res.json()
+      setLastReport(report)
+      addToast(`${labelTitle} generated`, 'success')
+    } catch (err) {
+      addToast(`Render failed: ${err.message}`, 'error')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handlePreview = () => {
+    if (!selectedId) return
+    window.open(`${API}/templates/${selectedId}/preview/${reportType}`, '_blank')
+  }
+
+  const LabelIcon = labelIcon
+
+  return (
+    <div className="space-y-5">
+      {/* Template picker */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #2A2D3A' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LabelIcon size={15} style={{ color: '#6B7280' }} />
+              <h3 className="text-sm font-semibold" style={{ color: '#E8EAF0' }}>Template</h3>
+            </div>
+            <button
+              onClick={() => window.open('/settings', '_self')}
+              className="text-xs transition-colors hover:text-white"
+              style={{ color: '#4F8EF7' }}
+            >
+              Manage templates ↗
+            </button>
+          </div>
+          <p className="text-xs mt-1" style={{ color: '#6B7280' }}>
+            Choose which template to use for this {labelTitle.toLowerCase()}.
+          </p>
+        </div>
+
+        <div className="p-5 space-y-2">
+          {templates.length === 0 ? (
+            <p className="text-sm" style={{ color: '#6B7280' }}>No {filterType} templates installed.</p>
+          ) : (
+            templates.map(t => (
+              <label
+                key={t.id}
+                className="flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors"
+                style={{
+                  backgroundColor: selectedId === t.id ? 'rgba(79,142,247,0.07)' : 'transparent',
+                  border: `1px solid ${selectedId === t.id ? 'rgba(79,142,247,0.3)' : '#2A2D3A'}`,
+                }}
+              >
+                <input
+                  type="radio"
+                  name={`template-${reportType}`}
+                  value={t.id}
+                  checked={selectedId === t.id}
+                  onChange={() => setSelectedId(t.id)}
+                  className="mt-0.5 accent-blue-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium" style={{ color: '#E8EAF0' }}>{t.name}</span>
+                    <span
+                      className="text-xs px-1.5 py-0.5 rounded font-mono"
+                      style={{ backgroundColor: '#0F1117', color: '#6B7280', border: '1px solid #2A2D3A' }}
+                    >
+                      v{t.version}
+                    </span>
+                    {t.builtin && (
+                      <span
+                        className="text-xs px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: 'rgba(100,116,139,0.15)', color: '#64748B', border: '1px solid rgba(100,116,139,0.2)' }}
+                      >
+                        built-in
+                      </span>
+                    )}
+                  </div>
+                  {t.description && (
+                    <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#6B7280' }}>
+                      {t.description.length > 120 ? t.description.slice(0, 120) + '…' : t.description}
+                    </p>
+                  )}
+                </div>
+              </label>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleGenerate}
+          disabled={!selectedId || generating}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ backgroundColor: '#4F8EF7', color: '#fff' }}
+        >
+          {generating
+            ? <><RefreshCw size={14} className="animate-spin" /> Generating…</>
+            : <><FileText size={14} /> Generate {labelTitle}</>
+          }
+        </button>
+
+        {selectedId && (
+          <button
+            onClick={handlePreview}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
+            style={{ color: '#6B7280', border: '1px solid #2A2D3A' }}
+          >
+            <ExternalLink size={13} /> Preview template
+          </button>
+        )}
+      </div>
+
+      {/* Last generated report */}
+      {lastReport && (
+        <div
+          className="flex items-center justify-between p-4 rounded-xl"
+          style={{ backgroundColor: 'rgba(62,207,142,0.05)', border: '1px solid rgba(62,207,142,0.2)' }}
+        >
+          <div>
+            <p className="text-sm font-medium" style={{ color: '#3ECF8E' }}>Report generated</p>
+            <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+              {lastReport.name} · {lastReport.size}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.open(`${API}/reports/${lastReport.id}/view`, '_blank')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white/5"
+              style={{ color: '#4F8EF7', border: '1px solid #2A2D3A' }}
+            >
+              <ExternalLink size={12} /> Open
+            </button>
+            <a
+              href={`${API}/reports/${lastReport.id}/download`}
+              download
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white/5"
+              style={{ color: '#6B7280', border: '1px solid #2A2D3A' }}
+            >
+              <Download size={12} /> Download
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Checklist tab ──────────────────────────────────────────────────────────────
 
 function ChecklistTab({ tasks, coverage, assessmentId, onRefresh }) {
@@ -953,6 +1153,8 @@ export default function AssessmentDetail() {
     { id: 'checklist', label: tasks.length > 0 ? `Checklist (${tasks.length})` : 'Checklist' },
     { id: 'findings',  label: `Findings (${findings.length})` },
     { id: 'runs',      label: `Runs (${runs.length})` },
+    { id: 'report',    label: 'Report' },
+    { id: 'strategy',  label: 'Strategy' },
   ]
 
   return (
@@ -1133,6 +1335,16 @@ export default function AssessmentDetail() {
             ))
           )}
         </div>
+      )}
+
+      {/* Report tab */}
+      {activeTab === 'report' && (
+        <ReportTab assessment={assessment} reportType="report" addToast={addToast} />
+      )}
+
+      {/* Strategy tab */}
+      {activeTab === 'strategy' && (
+        <ReportTab assessment={assessment} reportType="strategy" addToast={addToast} />
       )}
 
       {/* Delete confirm */}

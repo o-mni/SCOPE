@@ -15,7 +15,8 @@ class Assessment(Base):
     last_run = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     module_names = Column(String, default="[]")   # JSON array — fixed at creation
-    template_id = Column(String, nullable=True)   # advisory: which template was used
+    template_id          = Column(String, nullable=True)  # selected report template
+    strategy_template_id = Column(String, nullable=True)  # selected strategy template
 
     findings = relationship("Finding", back_populates="assessment", cascade="all, delete-orphan")
     runs = relationship("Run", back_populates="assessment", cascade="all, delete-orphan")
@@ -66,9 +67,12 @@ class Report(Base):
     name = Column(String, nullable=False)
     assessment_id = Column(Integer, ForeignKey("assessments.id"), nullable=True)
     assessment_name = Column(String, default="")
-    format = Column(String, default="PDF")  # PDF, HTML, JSON, Markdown
+    format = Column(String, default="HTML")  # HTML, PDF
     date = Column(DateTime, default=datetime.utcnow)
     size = Column(String, default="")
+    template_id = Column(String, nullable=True)
+    report_type = Column(String, nullable=True)   # "report" | "strategy"
+    file_path   = Column(String, nullable=True)   # absolute path to generated file
 
 
 class ActivityEvent(Base):

@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>test 2 — SCOPE</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<div class="cover" id="cover">
+  <div class="report-label">Preliminary Security Assessment</div>
+  <h1>test 2</h1>
+
+  <div class="cover-meta">
+    <div><strong>Target System:</strong> 127.0.0.1</div>
+    <div><strong>Assessed by:</strong> SCOPE Automated Engine</div>
+    <div><strong>Assessment Date:</strong> 2026-03-21</div>
+    <div><strong>Report Generated:</strong> 2026-03-22 00:32 UTC</div>
+    <div><strong>Assessment ID:</strong> <span class="text-mono">7</span></div>
+    <div><strong>Classification:</strong> Internal Use Only</div>
+  </div>
+</div>
+
+<div class="toc page-break" id="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#executive-summary">Executive Summary</a></li>
+    <li><a href="#scope-methodology">Scope &amp; Methodology</a></li>
+    <li><a href="#system-overview">System Overview</a></li>
+    <li><a href="#findings">Findings</a>
+      <ol>
+        <li><a href="#findings-critical">Critical</a></li>
+        <li><a href="#findings-high">High</a></li>
+        <li><a href="#findings-medium">Medium</a></li>
+        <li><a href="#findings-low">Low</a></li>
+        <li><a href="#findings-info">Informational</a></li>
+      </ol>
+    </li>
+    <li><a href="#coverage">Assessment Coverage</a></li>
+    <li><a href="#recommendations">Recommendations</a></li>
+    <li><a href="#disclaimer">Disclaimer</a></li>
+  </ol>
+</div>
+
+<div class="section page-break" id="executive-summary">
+  <div class="section-header">
+    <span class="section-number">1</span>
+    <h2>Executive Summary</h2>
+  </div>
+
+  <p>test</p>
+
+  <div class="severity-summary">
+    <div class="severity-card critical">
+      <div class="sev-count">3</div>
+      <div class="sev-label">Critical</div>
+    </div>
+    <div class="severity-card high">
+      <div class="sev-count">2</div>
+      <div class="sev-label">High</div>
+    </div>
+    <div class="severity-card medium">
+      <div class="sev-count">6</div>
+      <div class="sev-label">Medium</div>
+    </div>
+    <div class="severity-card low">
+      <div class="sev-count">4</div>
+      <div class="sev-label">Low</div>
+    </div>
+    <div class="severity-card informational">
+      <div class="sev-count">0</div>
+      <div class="sev-label">Informational</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" id="scope-methodology">
+  <div class="section-header">
+    <span class="section-number">2</span>
+    <h2>Scope &amp; Methodology</h2>
+  </div>
+
+  <h3>Assessment Scope</h3>
+  <p>The assessment covered the system configuration, installed packages, running services, network exposure, user accounts, file permissions, and security hardening baseline.</p>
+
+
+  <h3>Methodology</h3>
+  <p>SCOPE performed a non-intrusive, read-only audit of local system state. No exploits or active probes were used. All data was collected via OS-native interfaces and configuration files.</p>
+
+</div>
+
+<div class="section" id="system-overview">
+  <div class="section-header">
+    <span class="section-number">3</span>
+    <h2>System Overview</h2>
+  </div>
+
+  <p class="text-muted">System information was not collected during this assessment.</p>
+</div>
+
+<div class="section page-break" id="findings">
+  <div class="section-header">
+    <span class="section-number">4</span>
+    <h2>Findings</h2>
+  </div>
+
+
+  <h3>Finding Index</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Severity</th>
+        <th>Category</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td class="text-mono"><a href="#finding-F-0039">F-0039</a></td>
+        <td>No active host-based firewall detected</td>
+        <td><span class="badge badge-critical">critical</span></td>
+        <td>Network</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td class="text-mono"><a href="#finding-F-0045">F-0045</a></td>
+        <td>SSH permits direct root login</td>
+        <td><span class="badge badge-critical">critical</span></td>
+        <td>Authentication</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td class="text-mono"><a href="#finding-F-0053">F-0053</a></td>
+        <td>World-readable files containing hardcoded credentials</td>
+        <td><span class="badge badge-critical">critical</span></td>
+        <td>Secrets</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td class="text-mono"><a href="#finding-F-0044">F-0044</a></td>
+        <td>Unexpected SUID/SGID binaries detected</td>
+        <td><span class="badge badge-high">high</span></td>
+        <td>File Permissions</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td class="text-mono"><a href="#finding-F-0046">F-0046</a></td>
+        <td>SSH password authentication enabled</td>
+        <td><span class="badge badge-high">high</span></td>
+        <td>Authentication</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td class="text-mono"><a href="#finding-F-0038">F-0038</a></td>
+        <td>Listening port inventory (16 port(s) detected)</td>
+        <td><span class="badge badge-info">info</span></td>
+        <td>Network</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td class="text-mono"><a href="#finding-F-0042">F-0042</a></td>
+        <td>Martian packet logging disabled</td>
+        <td><span class="badge badge-low">low</span></td>
+        <td>System Hardening</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td class="text-mono"><a href="#finding-F-0049">F-0049</a></td>
+        <td>SSH login banner not configured</td>
+        <td><span class="badge badge-low">low</span></td>
+        <td>Configuration</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td class="text-mono"><a href="#finding-F-0050">F-0050</a></td>
+        <td>SSH agent forwarding enabled</td>
+        <td><span class="badge badge-low">low</span></td>
+        <td>Configuration</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td class="text-mono"><a href="#finding-F-0052">F-0052</a></td>
+        <td>CUPS print service is running</td>
+        <td><span class="badge badge-low">low</span></td>
+        <td>Services</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td class="text-mono"><a href="#finding-F-0040">F-0040</a></td>
+        <td>Kernel pointer exposure not restricted</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td>System Hardening</td>
+      </tr>
+      <tr>
+        <td>12</td>
+        <td class="text-mono"><a href="#finding-F-0041">F-0041</a></td>
+        <td>ICMP redirect sending enabled</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td>System Hardening</td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td class="text-mono"><a href="#finding-F-0043">F-0043</a></td>
+        <td>IP forwarding enabled</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td>System Hardening</td>
+      </tr>
+      <tr>
+        <td>14</td>
+        <td class="text-mono"><a href="#finding-F-0047">F-0047</a></td>
+        <td>SSH MaxAuthTries is too high</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td>Configuration</td>
+      </tr>
+      <tr>
+        <td>15</td>
+        <td class="text-mono"><a href="#finding-F-0048">F-0048</a></td>
+        <td>SSH has no idle session timeout</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td>Configuration</td>
+      </tr>
+      <tr>
+        <td>16</td>
+        <td class="text-mono"><a href="#finding-F-0051">F-0051</a></td>
+        <td>No password complexity policy configured in PAM</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td>Authentication</td>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <h3 id="findings-critical">
+    <span class="badge badge-critical">Critical</span>
+    Findings <span class="text-muted">(3)</span>
+  </h3>
+
+  <div class="finding-card" id="finding-F-0039">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0039</span>
+      <span class="finding-title">No active host-based firewall detected</span>
+      <span class="badge badge-critical">critical</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>No host-based firewall is active. All listening services are directly reachable from the network without any filtering. A firewall provides a critical layer of defence-in-depth.</dd>
+
+        <dt>Category</dt>
+        <dd>Network</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>ufw: 
+iptables: no rules beyond defaults (0 non-default rules)
+nftables: no ruleset (0 lines)</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Enable ufw (simplest) or configure iptables/nftables rules.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0045">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0045</span>
+      <span class="finding-title">SSH permits direct root login</span>
+      <span class="badge badge-critical">critical</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>PermitRootLogin is set to 'yes' or not restricted. Direct root SSH access bypasses audit trails and reduces the work an attacker needs to do after gaining SSH access.</dd>
+
+        <dt>Category</dt>
+        <dd>Authentication</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/etc/ssh/sshd_config — PermitRootLogin yes</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Disable direct root login. Use a normal user account with sudo.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0053">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0053</span>
+      <span class="finding-title">World-readable files containing hardcoded credentials</span>
+      <span class="badge badge-critical">critical</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>Files that appear to contain credentials or secrets are world-readable. Any local user on this system can read these files and extract credentials.</dd>
+
+        <dt>Category</dt>
+        <dd>Secrets</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/home/omni/.cache/yay/java24-openjdk/src/jdk24u-jdk-24.0.2-12/src/jdk.management.agent/share/conf/management.properties  [world-readable]
+  line 110: #          javax.net.ssl.keyStorePassword=[REDACTED]
+  line 112: #          javax.net.ssl.trustStorePassword=[REDACTED]
+/home/omni/Downloads/Phishly/docker-compose.yml  [world-readable]
+  line 16:       POSTGRES_PASSWORD: [REDACTED]
+  line 139:       POSTGRES_PASSWORD: [REDACTED]
+  line 146:       SMTP_PASSWORD: [REDACTED]
+/home/omni/Downloads/Phishly/db/docker-compose.yml  [world-readable]
+  line 10:       POSTGRES_PASSWORD: [REDACTED]
+/home/omni/Downloads/Phishly/webadmin/docker-compose.yml  [world-readable]
+  line 49:   #     POSTGRES_PASSWORD: [REDACTED]
+/home/omni/Downloads/Phishly/worker/docker-compose.yml  [world-readable]
+  line 21:       POSTGRES_PASSWORD: [REDACTED]
+  line 28:       SMTP_PASSWORD: [REDACTED]
+/home/omni/yay/src/yay-12.5.7/.github/workflows/builder-image.yml  [world-readable]
+  line 39:           password: [REDACTED]
+  line 94:           password: [REDACTED]
+/home/omni/yay/src/yay-12.5.7/.github/workflows/multiarch-build.yml  [world-readable]
+  line 31:           password: [REDACTED]
+/home/omni/yay/src/yay-12.5.7/.github/workflows/testing-git.yml  [world-readable]
+  line 34:           echo 'github ALL=[REDACTED]
+/home/omni/yay/src/gopath/pkg/mod/github.com/!jguer/go-alpm/v2@v2.3.1/.github/workflows/builder-image.yml  [world-readable]
+  line 21:           password: [REDACTED]
+/home/omni/yay/src/gopath/pkg/mod/github.com/!jguer/go-alpm/v2@v2.3.1/.github/workflows/test-git.yml  [world-readable]
+  line 26:                 echo "github ALL=[REDACTED]
+/home/omni/yay/src/gopath/pkg/mod/github.com/itchyny/gojq@v0.12.18/.github/workflows/ci.yaml  [world-readable]
+  line 108:           password: [REDACTED]
+  line 115:           password: [REDACTED]
+/home/omni/.winboat/docker-compose.yml  [world-readable]
+  line 14:       PASSWORD: [REDACTED]
+/opt/metasploit/.github/workflows/mssql_acceptance.yml  [world-readable]
+  line 54:           MSSQL_SA_PASSWORD: [REDACTED]
+/opt/metasploit/.github/workflows/mysql_acceptance.yml  [world-readable]
+  line 54:           MYSQL_ROOT_PASSWORD: [REDACTED]
+/opt/metasploit/.github/workflows/postgres_acceptance.yml  [world-readable]
+  line 57:           POSTGRES_PASSWORD: [REDACTED]
+/opt/metasploit/.github/workflows/shared_gem_verify_rails.yml  [world-readable]
+  line 55:             -e POSTGRES_PASSWORD=[REDACTED]
+/opt/metasploit/.github/workflows/shared_smb_acceptance.yml  [world-readable]
+  line 33:       SMB_PASSWORD: [REDACTED]
+/opt/metasploit/.github/workflows/verify.yml  [world-readable]
+  line 52:           POSTGRES_PASSWORD: [REDACTED]
+/opt/metasploit/data/exploits/CVE-2025-8518/docker-compose.yml  [world-readable]
+  line 28:       MYSQL_ROOT_PASSWORD: [REDACTED]
+  line 31:       MYSQL_PASSWORD: [REDACTED]
+/opt/metasploit/data/jtr/dynamic.conf  [world-readable]
+  line 487: Test=[REDACTED]
+  line 807: Test=[REDACTED]
+  line 892: Test=[REDACTED]
+/opt/metasploit/data/snmp/mibs/L2TP-MIB.yaml  [world-readable]
+  line 33: l2tpTunnelConfigSecret: [REDACTED]
+  line 123: l2tpDomainConfigSecret: [REDACTED]
+/opt/metasploit/data/snmp/mibs/PPP-SEC-MIB.yaml  [world-readable]
+  line 6: pppSecuritySecretsSecret: [REDACTED]
+/opt/metasploit/test/kubernetes/secrets/templates/basic-auth.yaml  [world-readable]
+  line 8:   password: [REDACTED]
+/opt/metasploit/test/kubernetes/secrets/templates/opaque.yaml  [world-readable]
+  line 16:   password: [REDACTED]
+/opt/metasploit/test/kubernetes/secrets/templates/ssh-auth.yaml  [world-readable]
+  line 11:   ssh-privatekey: [REDACTED]</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Restrict file permissions and remove or rotate any exposed credentials.</dd>
+
+      </dl>
+    </div>
+  </div>
+
+
+  <h3 id="findings-high">
+    <span class="badge badge-high">High</span>
+    Findings <span class="text-muted">(2)</span>
+  </h3>
+
+  <div class="finding-card" id="finding-F-0044">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0044</span>
+      <span class="finding-title">Unexpected SUID/SGID binaries detected</span>
+      <span class="badge badge-high">high</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>Binaries with SUID or SGID bits set outside the expected set were found. SUID binaries run with the owner's privileges (often root). An unexpected SUID binary may be a backdoor or misconfiguration that enables privilege escalation.</dd>
+
+        <dt>Category</dt>
+        <dd>File Permissions</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/bin/ksu  (SUID, mode: 0o4755)
+/bin/chage  (SUID, mode: 0o4755)
+/bin/expiry  (SUID, mode: 0o4755)
+/bin/gpasswd  (SUID, mode: 0o4755)
+/bin/groupmems  (SGID, mode: 0o2750)
+/bin/passwd  (SUID, mode: 0o4755)
+/bin/sg  (SUID, mode: 0o4755)
+/bin/pkexec  (SUID, mode: 0o4755)
+/bin/crontab  (SUID, mode: 0o4755)
+/bin/chfn  (SUID, mode: 0o4755)
+/bin/chsh  (SUID, mode: 0o4755)
+/bin/newgrp  (SUID, mode: 0o4755)
+/bin/wall  (SGID, mode: 0o2755)
+/bin/write  (SGID, mode: 0o2755)
+/bin/sudo  (SUID, mode: 0o4755)
+/bin/fusermount  (SUID, mode: 0o4755)
+/bin/unix_chkpwd  (SUID+SGID, mode: 0o6755)
+/bin/mount.cifs  (SUID+SGID, mode: 0o6755)
+/bin/fusermount3  (SUID, mode: 0o4755)
+/sbin/ksu  (SUID, mode: 0o4755)
+/usr/bin/ksu  (SUID, mode: 0o4755)
+/usr/sbin/ksu  (SUID, mode: 0o4755)
+/usr/lib/dbus-daemon-launch-helper  (SUID, mode: 0o4110)</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Review each binary. Remove the SUID/SGID bit if it is not needed.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0046">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0046</span>
+      <span class="finding-title">SSH password authentication enabled</span>
+      <span class="badge badge-high">high</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>PasswordAuthentication is not disabled. Password-based SSH logins are vulnerable to brute-force and credential-stuffing attacks. Public-key authentication is significantly more secure.</dd>
+
+        <dt>Category</dt>
+        <dd>Authentication</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/etc/ssh/sshd_config — PasswordAuthentication yes</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Disable password auth and use SSH key pairs exclusively.</dd>
+
+      </dl>
+    </div>
+  </div>
+
+
+  <h3 id="findings-medium">
+    <span class="badge badge-medium">Medium</span>
+    Findings <span class="text-muted">(6)</span>
+  </h3>
+
+  <div class="finding-card" id="finding-F-0040">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0040</span>
+      <span class="finding-title">Kernel pointer exposure not restricted</span>
+      <span class="badge badge-medium">medium</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>kernel.kptr_restrict is 0. Kernel symbol addresses in /proc/kallsyms and similar interfaces are visible to unprivileged users, aiding kernel exploit development.</dd>
+
+        <dt>Category</dt>
+        <dd>System Hardening</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>kernel.kptr_restrict = 0  (expected: >= 1)</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Set kernel.kptr_restrict to at least 1 (or 2 for maximum restriction).</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0041">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0041</span>
+      <span class="finding-title">ICMP redirect sending enabled</span>
+      <span class="badge badge-medium">medium</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>The host will send ICMP redirect messages. This is only appropriate on routers. On servers and workstations it should be disabled.</dd>
+
+        <dt>Category</dt>
+        <dd>System Hardening</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>net.ipv4.conf.all.send_redirects = 1  (expected: 0)</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Disable ICMP redirect sending: net.ipv4.conf.all.send_redirects = 0.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0043">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0043</span>
+      <span class="finding-title">IP forwarding enabled</span>
+      <span class="badge badge-medium">medium</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>IP forwarding is enabled. Unless this host is intentionally acting as a router or VPN gateway, forwarding should be disabled to prevent traffic pivoting.</dd>
+
+        <dt>Category</dt>
+        <dd>System Hardening</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>net.ipv4.ip_forward = 1  (expected: 0)</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Disable IP forwarding unless this host is a router: net.ipv4.ip_forward = 0.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0047">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0047</span>
+      <span class="finding-title">SSH MaxAuthTries is too high</span>
+      <span class="badge badge-medium">medium</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>MaxAuthTries is set to 6. A high value allows more authentication attempts per connection, making brute-force attacks easier.</dd>
+
+        <dt>Category</dt>
+        <dd>Configuration</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/etc/ssh/sshd_config — MaxAuthTries 6</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Reduce MaxAuthTries to 3 or 4.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0048">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0048</span>
+      <span class="finding-title">SSH has no idle session timeout</span>
+      <span class="badge badge-medium">medium</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>ClientAliveInterval is 0 (disabled). Idle SSH sessions are never terminated, leaving unattended sessions open indefinitely.</dd>
+
+        <dt>Category</dt>
+        <dd>Configuration</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/etc/ssh/sshd_config — ClientAliveInterval 0 (no timeout)</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Set an idle timeout to automatically disconnect inactive sessions.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0051">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0051</span>
+      <span class="finding-title">No password complexity policy configured in PAM</span>
+      <span class="badge badge-medium">medium</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>Neither pam_pwquality nor pam_cracklib is configured in the PAM password stack. Without a complexity policy, users can set trivially weak passwords that are easy to brute-force.</dd>
+
+        <dt>Category</dt>
+        <dd>Authentication</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/etc/pam.d/system-auth — no pam_pwquality or pam_cracklib found</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Install and configure pam_pwquality to enforce password complexity.</dd>
+
+      </dl>
+    </div>
+  </div>
+
+
+  <h3 id="findings-low">
+    <span class="badge badge-low">Low</span>
+    Findings <span class="text-muted">(4)</span>
+  </h3>
+
+  <div class="finding-card" id="finding-F-0042">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0042</span>
+      <span class="finding-title">Martian packet logging disabled</span>
+      <span class="badge badge-low">low</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>Packets with impossible source addresses (martians) are not being logged. Enabling this aids in detecting IP spoofing and routing anomalies.</dd>
+
+        <dt>Category</dt>
+        <dd>System Hardening</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>net.ipv4.conf.all.log_martians = 0  (expected: 1)</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Enable martian packet logging: net.ipv4.conf.all.log_martians = 1.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0049">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0049</span>
+      <span class="finding-title">SSH login banner not configured</span>
+      <span class="badge badge-low">low</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>No SSH warning banner is displayed to connecting users. A legal notice banner establishes that access is authorised only and provides a basis for prosecution.</dd>
+
+        <dt>Category</dt>
+        <dd>Configuration</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/etc/ssh/sshd_config — Banner not set</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Configure a legal warning banner shown before login.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0050">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0050</span>
+      <span class="finding-title">SSH agent forwarding enabled</span>
+      <span class="badge badge-low">low</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>AllowAgentForwarding is enabled. If users forward their SSH agent to a compromised intermediate host, an attacker on that host can use the forwarded agent to authenticate to other systems.</dd>
+
+        <dt>Category</dt>
+        <dd>Configuration</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>/etc/ssh/sshd_config — AllowAgentForwarding yes</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Disable agent forwarding unless specifically needed.</dd>
+
+      </dl>
+    </div>
+  </div>
+  <div class="finding-card" id="finding-F-0052">
+    <div class="finding-card-header">
+      <span class="finding-id">F-0052</span>
+      <span class="finding-title">CUPS print service is running</span>
+      <span class="badge badge-low">low</span>
+    </div>
+    <div class="finding-card-body">
+      <dl>
+        <dt>Description</dt>
+        <dd>CUPS (print service) is rarely needed on servers and has had historical RCE vulnerabilities. Disable if this host does not serve print jobs.</dd>
+
+        <dt>Category</dt>
+        <dd>Services</dd>
+
+
+        <dt>Evidence</dt>
+        <dd><pre>Running service(s): cups</pre></dd>
+
+        <dt>Remediation</dt>
+        <dd>Disable 'cups' if not explicitly required.</dd>
+
+      </dl>
+    </div>
+  </div>
+
+
+ </div>
+
+<div class="section page-break" id="coverage">
+  <div class="section-header">
+    <span class="section-number">5</span>
+    <h2>Assessment Coverage</h2>
+  </div>
+
+  <p>The following checks were attempted during this assessment:</p>
+
+  <div class="coverage-grid">
+    <div class="coverage-item passed">
+      <span>Listening port enumeration and dangerous service detection</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>Host-based firewall status check (ufw, iptables, nftables)</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>Kernel sysctl hardening parameter checks</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>World-writable files and unexpected SUID/SGID binary scan</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>User account and privilege review</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>SSH daemon configuration audit</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>PAM password quality and account lockout configuration check</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>Package update status and EOL version detection</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>Running service audit — dangerous and unnecessary service detection</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>Hardcoded credential and secret file detection</span>
+    </div>
+    <div class="coverage-item passed">
+      <span>SSH private key and authorized_keys permission audit</span>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="recommendations">
+  <div class="section-header">
+    <span class="section-number">6</span>
+    <h2>Recommendations</h2>
+  </div>
+
+  <p class="text-muted">No specific recommendations recorded.</p>
+</div>
+
+
+<div class="section page-break" id="disclaimer">
+  <h2>Disclaimer</h2>
+  <div class="disclaimer">
+    This report was generated automatically by the SCOPE platform based on data collected during the assessment window. Results reflect the system state at the time of assessment and may not account for changes made after that point. This report is intended for internal use by authorized personnel only. SCOPE does not guarantee the completeness or accuracy of findings and recommends manual verification of critical items before remediation.
+
+  </div>
+  <p class="text-muted mt-lg">
+    Report generated by <strong>SCOPE</strong> — Security Configuration Observation and Protection Engine
+ &mdash; 2026-03-22 00:32 UTC  </p>
+</div>
+
+</body>
+</html>

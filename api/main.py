@@ -33,6 +33,7 @@ app.add_middleware(
 # Import routers
 from routers import assessments, findings, reports, tasks, domains
 from routers import terminal
+from routers import templates as templates_router
 
 app.include_router(assessments.router, prefix="/api")
 app.include_router(findings.router, prefix="/api")
@@ -40,6 +41,7 @@ app.include_router(reports.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 app.include_router(domains.router, prefix="/api")
 app.include_router(terminal.router, prefix="/api")
+app.include_router(templates_router.router, prefix="/api")
 
 
 @app.get("/api/stats")
@@ -90,6 +92,13 @@ def get_activity(db: Session = Depends(get_db)):
 @app.get("/")
 def root():
     return {"status": "ok", "service": "SCOPE API", "version": "1.0.0"}
+
+
+@app.on_event("startup")
+def startup_templates():
+    """Load and validate all templates at startup."""
+    from templates.loader import load_all
+    load_all()
 
 
 @app.on_event("startup")

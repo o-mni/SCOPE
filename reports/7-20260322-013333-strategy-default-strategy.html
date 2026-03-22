@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assessment Strategy — test 2 — SCOPE</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<div class="cover" id="cover">
+  <div class="doc-type">Assessment Strategy Plan</div>
+  <h1>test 2</h1>
+  <div class="subtitle">Pre-engagement planning document for automated security assessment</div>
+
+  <div class="cover-meta">
+    <div><strong>Target System:</strong>  127.0.0.1</div>
+    <div><strong>Planned by:</strong>     SCOPE Platform</div>
+    <div><strong>Version:</strong>        1.0</div>
+    <div><strong>Created:</strong>        2026-03-21</div>
+    <div><strong>Assessment Window:</strong>
+      —
+    </div>
+    <div><strong>Plan ID:</strong>        <span class="text-mono">7</span></div>
+    <div><strong>Status:</strong>         Active</div>
+  </div>
+</div>
+
+<div class="toc page-break" id="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#purpose">Purpose &amp; Objectives</a></li>
+    <li><a href="#scope">Assessment Scope</a></li>
+    <li><a href="#methodology">Methodology</a></li>
+    <li><a href="#risk-acceptance">Risk Acceptance Criteria</a></li>
+    <li><a href="#roles">Roles &amp; Responsibilities</a></li>
+    <li><a href="#deliverables">Expected Deliverables</a></li>
+    <li><a href="#disclaimer">Disclaimer</a></li>
+  </ol>
+</div>
+
+<div class="section page-break" id="purpose">
+  <div class="section-header">
+    <span class="section-number">1</span>
+    <h2>Purpose &amp; Objectives</h2>
+  </div>
+
+  <p>This document defines the strategy, scope, and approach for the planned security assessment. It is intended to align stakeholders on objectives, methodology, and expected outcomes before the assessment begins.</p>
+
+  <ul>
+    <li>Identify security misconfigurations and weaknesses in the target system.</li>
+    <li>Evaluate compliance against organisational security baseline.</li>
+    <li>Provide actionable remediation guidance for identified findings.</li>
+    <li>Establish a current security posture snapshot for tracking improvement over time.</li>
+  </ul>
+
+</div>
+
+<div class="section" id="scope">
+  <div class="section-header">
+    <span class="section-number">2</span>
+    <h2>Assessment Scope</h2>
+  </div>
+
+  <h3>In Scope</h3>
+  <ul>
+    <li>Operating system configuration and kernel parameters</li>
+    <li>Installed packages and service versions</li>
+    <li>Running services and open network ports</li>
+    <li>User accounts, groups, sudo rules, and SSH configuration</li>
+    <li>File system permissions and SUID/SGID binaries</li>
+    <li>Firewall and network filtering rules</li>
+    <li>Logging and audit configuration</li>
+    <li>Authentication and PAM configuration</li>
+  </ul>
+
+  <h3>Out of Scope</h3>
+  <p class="text-muted">No explicit exclusions defined. All default SCOPE modules are in scope.</p>
+
+  <h3>Constraints &amp; Assumptions</h3>
+  <ul>
+    <li>Assessment will be conducted without root privileges unless explicitly granted.</li>
+    <li>No active exploitation or offensive techniques will be used.</li>
+    <li>All data collection is read-only and non-destructive.</li>
+    <li>System availability will not be impacted during assessment.</li>
+  </ul>
+</div>
+
+<div class="section page-break" id="methodology">
+  <div class="section-header">
+    <span class="section-number">3</span>
+    <h2>Methodology</h2>
+  </div>
+
+  <p>SCOPE performs a structured, non-intrusive audit of local system state using OS-native interfaces and configuration file inspection. No network scanning or active exploitation is performed.</p>
+
+  <h3>Assessment Phases</h3>
+  <div class="phase-list">
+    <div class="phase-card">
+      <div class="phase-card-header phase-1">
+        <span class="phase-num">Phase 1</span>
+        <span class="phase-name">Reconnaissance &amp; Data Collection</span>
+      </div>
+      <div class="phase-card-body">
+        <p>Collect system metadata, installed packages, running services, and configuration files using SCOPE's data collection modules.</p>
+      </div>
+    </div>
+    <div class="phase-card">
+      <div class="phase-card-header phase-2">
+        <span class="phase-num">Phase 2</span>
+        <span class="phase-name">Configuration Analysis</span>
+      </div>
+      <div class="phase-card-body">
+        <p>Evaluate collected data against security baseline rules, known misconfiguration patterns, and hardening benchmarks.</p>
+      </div>
+    </div>
+    <div class="phase-card">
+      <div class="phase-card-header phase-3">
+        <span class="phase-num">Phase 3</span>
+        <span class="phase-name">Finding Classification &amp; Triage</span>
+      </div>
+      <div class="phase-card-body">
+        <p>Classify all findings by severity, assign remediation priority, and group by category for reporting.</p>
+      </div>
+    </div>
+    <div class="phase-card">
+      <div class="phase-card-header phase-4">
+        <span class="phase-num">Phase 4</span>
+        <span class="phase-name">Reporting &amp; Handover</span>
+      </div>
+      <div class="phase-card-body">
+        <p>Generate the preliminary assessment report, review findings with stakeholders, and deliver remediation guidance.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Planned Modules</h3>
+  <div class="callout">
+    Module selection will be finalised prior to assessment execution. All default SCOPE modules are planned to run unless marked optional or excluded by scope constraints.
+  </div>
+
+</div>
+
+
+<div class="section" id="risk-acceptance">
+  <div class="section-header">
+    <span class="section-number">4</span>
+    <h2>Risk Acceptance Criteria</h2>
+  </div>
+
+  <p>The following table defines how findings at each severity level will be handled post-assessment.</p>
+
+  <table>
+    <thead>
+      <tr><th>Severity</th><th>Response Required</th><th>SLA</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="badge badge-critical">Critical</span></td><td>Immediate escalation and approval required</td><td>24 hours</td></tr>
+      <tr><td><span class="badge badge-high">High</span></td><td>Owner approval before acceptance</td><td>72 hours</td></tr>
+      <tr><td><span class="badge badge-medium">Medium</span></td><td>Log, assign, and schedule remediation</td><td>14 days</td></tr>
+      <tr><td><span class="badge badge-low">Low</span></td><td>Log and review in next cycle</td><td>90 days</td></tr>
+      <tr><td><span class="badge badge-info">Info</span></td><td>Informational — no action required</td><td>N/A</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section" id="roles">
+  <div class="section-header">
+    <span class="section-number">5</span>
+    <h2>Roles &amp; Responsibilities</h2>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Role</th><th>Responsibilities</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Assessment Lead</strong></td>
+        <td>Configure and execute the assessment; review all findings; deliver the final report.</td>
+      </tr>
+      <tr>
+        <td><strong>System Owner</strong></td>
+        <td>Grant access; review and accept/reject findings; approve remediation actions.</td>
+      </tr>
+      <tr>
+        <td><strong>Security Team</strong></td>
+        <td>Validate critical findings; advise on remediation; sign off on risk acceptance decisions.</td>
+      </tr>
+      <tr>
+        <td><strong>Operations</strong></td>
+        <td>Implement remediation steps; confirm resolution; retest as required.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section" id="deliverables">
+  <div class="section-header">
+    <span class="section-number">6</span>
+    <h2>Expected Deliverables</h2>
+  </div>
+
+  <ul>
+    <li><strong>Preliminary Assessment Report</strong> — Full findings report covering all assessed modules, severity breakdown, and remediation guidance.</li>
+    <li><strong>Raw Findings Export</strong> — Machine-readable JSON/CSV export of all findings for import into tracking systems.</li>
+    <li><strong>Executive Summary</strong> — One-page summary for non-technical stakeholders.</li>
+    <li><strong>Remediation Tracker</strong> — Prioritised list of remediation tasks with ownership and SLA assignments.</li>
+  </ul>
+</div>
+
+
+<div class="section page-break" id="disclaimer">
+  <h2>Disclaimer</h2>
+  <div class="disclaimer">
+    This Assessment Strategy Plan is a pre-engagement document generated by SCOPE to outline the planned approach for a security assessment. It does not constitute a legal authorisation to conduct testing. Prior written approval from the system owner must be obtained before any assessment is initiated. This document is for internal planning purposes only and should be treated as confidential.
+
+  </div>
+  <p class="text-muted mt-lg">
+    Generated by <strong>SCOPE</strong> — Security Configuration Observation and Protection Engine
+ &mdash; 2026-03-22  </p>
+</div>
+
+</body>
+</html>

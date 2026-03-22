@@ -1,7 +1,9 @@
-import React, { useState } from 'react'
-import { Terminal, BookOpen, Folder, Shield, Moon, Trash2, AlertTriangle } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Terminal, BookOpen, Folder, Shield, Moon, Trash2, AlertTriangle, FileText, RefreshCw, ExternalLink, Copy, X, Map } from 'lucide-react'
 import ConfirmModal from '../components/shared/ConfirmModal'
 import { useToast } from '../App'
+
+const API = 'http://localhost:8000/api'
 
 function SettingsSection({ title, description, children }) {
   return (
@@ -33,6 +35,302 @@ function SettingsRow({ label, description, children }) {
     </div>
   )
 }
+
+// ── Templates section ─────────────────────────────────────────────────────────
+
+function TemplatesSection({ addToast }) {
+  const [data,        setData]        = useState({ templates: [], errors: {} })
+  const [loading,     setLoading]     = useState(true)
+  const [reloading,   setReloading]   = useState(false)
+  const [dupTarget,   setDupTarget]   = useState(null)   // template being duplicated
+  const [dupId,       setDupId]       = useState('')
+  const [dupName,     setDupName]     = useState('')
+  const [dupLoading,  setDupLoading]  = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch(`${API}/templates`)
+      if (res.ok) setData(await res.json())
+    } catch {}
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchTemplates() }, [])
+
+  const handleReload = async () => {
+    setReloading(true)
+    try {
+      const res = await fetch(`${API}/templates/reload`, { method: 'POST' })
+      const result = res.ok ? await res.json() : null
+      if (result) {
+        addToast(`Templates reloaded — ${result.loaded} loaded`, 'success')
+        await fetchTemplates()
+      }
+    } catch (e) {
+      addToast('Reload failed', 'error')
+    } finally {
+      setReloading(false)
+    }
+  }
+
+  const handleOpenFolder = async (id) => {
+    try {
+      await fetch(`${API}/templates/${id}/open-folder`, { method: 'POST' })
+    } catch {}
+  }
+
+  const handleDuplicate = async () => {
+    if (!dupId || !dupName) return
+    setDupLoading(true)
+    try {
+      const res = await fetch(`${API}/templates/${dupTarget.id}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_id: dupId, new_name: dupName }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || `HTTP ${res.status}`)
+      }
+      addToast(`Template "${dupName}" created`, 'success')
+      setDupTarget(null)
+      setDupId('')
+      setDupName('')
+      await fetchTemplates()
+    } catch (e) {
+      addToast(`Duplicate failed: ${e.message}`, 'error')
+    } finally {
+      setDupLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    try {
+      const res = await fetch(`${API}/templates/${deleteTarget.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || `HTTP ${res.status}`)
+      }
+      addToast(`Template "${deleteTarget.name}" deleted`, 'success')
+      setDeleteTarget(null)
+      await fetchTemplates()
+    } catch (e) {
+      addToast(`Delete failed: ${e.message}`, 'error')
+    }
+  }
+
+  const typeIcon = (t) => t.templateType === 'strategy' ? Map : FileText
+  const typeLabel = (t) => {
+    if (t.templateType === 'both') return 'Report + Strategy'
+    if (t.templateType === 'strategy') return 'Strategy'
+    return 'Report'
+  }
+
+  return (
+    <>
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #2A2D3A' }}>
+          <div>
+            <h2 className="text-sm font-semibold" style={{ color: '#E8EAF0' }}>Templates</h2>
+            <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+              Manage report and strategy plan templates stored in{' '}
+              <code className="text-xs px-1 rounded" style={{ backgroundColor: '#0F1117', color: '#3ECF8E' }}>report_templates/</code>
+            </p>
+          </div>
+          <button
+            onClick={handleReload}
+            disabled={reloading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white/5 disabled:opacity-40"
+            style={{ color: '#6B7280', border: '1px solid #2A2D3A' }}
+            title="Rescan templates directory"
+          >
+            <RefreshCw size={12} className={reloading ? 'animate-spin' : ''} />
+            Reload
+          </button>
+        </div>
+
+        {/* Template list */}
+        <div className="divide-y" style={{ borderColor: '#2A2D3A' }}>
+          {loading ? (
+            <div className="py-8 text-center text-sm" style={{ color: '#6B7280' }}>Loading templates…</div>
+          ) : data.templates.length === 0 ? (
+            <div className="py-8 text-center text-sm" style={{ color: '#6B7280' }}>No templates found in report_templates/</div>
+          ) : data.templates.map(t => {
+            const TypeIcon = typeIcon(t)
+            return (
+              <div key={t.id} className="px-6 py-4 flex items-start gap-4">
+                <div
+                  className="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 mt-0.5"
+                  style={{ backgroundColor: 'rgba(79,142,247,0.1)', border: '1px solid rgba(79,142,247,0.15)' }}
+                >
+                  <TypeIcon size={16} style={{ color: '#4F8EF7' }} />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold" style={{ color: '#E8EAF0' }}>{t.name}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ backgroundColor: '#0F1117', color: '#6B7280', border: '1px solid #2A2D3A' }}>
+                      v{t.version}
+                    </span>
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(100,116,139,0.1)', color: '#64748B', border: '1px solid rgba(100,116,139,0.2)' }}>
+                      {typeLabel(t)}
+                    </span>
+                    {t.builtin && (
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(62,207,142,0.08)', color: '#3ECF8E', border: '1px solid rgba(62,207,142,0.2)' }}>
+                        built-in
+                      </span>
+                    )}
+                  </div>
+                  {t.description && (
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>
+                      {t.description.length > 140 ? t.description.slice(0, 140) + '…' : t.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                    {/* Preview */}
+                    {(t.templateType === 'report' || t.templateType === 'both') && (
+                      <button
+                        onClick={() => window.open(`${API}/templates/${t.id}/preview/report`, '_blank')}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors hover:bg-white/5"
+                        style={{ color: '#6B7280', border: '1px solid #2A2D3A' }}
+                      >
+                        <ExternalLink size={11} /> Preview report
+                      </button>
+                    )}
+                    {(t.templateType === 'strategy' || t.templateType === 'both') && (
+                      <button
+                        onClick={() => window.open(`${API}/templates/${t.id}/preview/strategy`, '_blank')}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors hover:bg-white/5"
+                        style={{ color: '#6B7280', border: '1px solid #2A2D3A' }}
+                      >
+                        <ExternalLink size={11} /> Preview strategy
+                      </button>
+                    )}
+                    {/* Open folder */}
+                    <button
+                      onClick={() => handleOpenFolder(t.id)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors hover:bg-white/5"
+                      style={{ color: '#6B7280', border: '1px solid #2A2D3A' }}
+                    >
+                      <Folder size={11} /> Open folder
+                    </button>
+                    {/* Duplicate */}
+                    <button
+                      onClick={() => {
+                        setDupTarget(t)
+                        setDupId('')
+                        setDupName(`${t.name} (copy)`)
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors hover:bg-white/5"
+                      style={{ color: '#6B7280', border: '1px solid #2A2D3A' }}
+                    >
+                      <Copy size={11} /> Duplicate
+                    </button>
+                    {/* Delete — custom templates only */}
+                    {!t.builtin && (
+                      <button
+                        onClick={() => setDeleteTarget(t)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors"
+                        style={{ color: '#E5534B', border: '1px solid rgba(229,83,75,0.25)' }}
+                      >
+                        <X size={11} /> Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Load errors */}
+        {Object.keys(data.errors || {}).length > 0 && (
+          <div className="px-6 py-4" style={{ borderTop: '1px solid #2A2D3A', backgroundColor: 'rgba(229,83,75,0.04)' }}>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#E5534B' }}>Template load errors</p>
+            {Object.entries(data.errors).map(([folder, msg]) => (
+              <div key={folder} className="text-xs mb-1" style={{ color: '#6B7280' }}>
+                <code style={{ color: '#E5534B' }}>{folder}</code>: {msg}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Duplicate modal */}
+      {dupTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full max-w-md rounded-xl p-6 space-y-4" style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}>
+            <h3 className="text-sm font-semibold" style={{ color: '#E8EAF0' }}>Duplicate "{dupTarget.name}"</h3>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs mb-1.5" style={{ color: '#6B7280' }}>Template ID (folder name)</label>
+                <input
+                  type="text"
+                  value={dupId}
+                  onChange={e => setDupId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/--+/g, '-'))}
+                  placeholder="my-custom-template"
+                  className="w-full px-3 py-2 rounded-lg text-sm font-mono outline-none"
+                  style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A', color: '#E8EAF0' }}
+                />
+                <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Lowercase letters, digits, and hyphens only</p>
+              </div>
+              <div>
+                <label className="block text-xs mb-1.5" style={{ color: '#6B7280' }}>Display Name</label>
+                <input
+                  type="text"
+                  value={dupName}
+                  onChange={e => setDupName(e.target.value)}
+                  placeholder="My Custom Template"
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                  style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A', color: '#E8EAF0' }}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleDuplicate}
+                disabled={!dupId || !dupName || dupLoading}
+                className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
+                style={{ backgroundColor: '#4F8EF7', color: '#fff' }}
+              >
+                {dupLoading ? 'Creating…' : 'Create copy'}
+              </button>
+              <button
+                onClick={() => setDupTarget(null)}
+                className="px-4 py-2 rounded-lg text-sm transition-colors hover:bg-white/5"
+                style={{ color: '#6B7280', border: '1px solid #2A2D3A' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm */}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title={`Delete "${deleteTarget?.name}"?`}
+        description="This will permanently delete the template folder and all its files."
+        items={deleteTarget ? [`Template: ${deleteTarget.name}`, `Folder: report_templates/${deleteTarget.id}/`] : []}
+        requireTyping={false}
+        confirmLabel="Delete Template"
+      />
+    </>
+  )
+}
+
+// ── Main Settings page ────────────────────────────────────────────────────────
 
 export default function Settings() {
   const { addToast } = useToast()
@@ -217,6 +515,9 @@ export default function Settings() {
           </div>
         </div>
       </SettingsSection>
+
+      {/* Templates */}
+      <TemplatesSection addToast={addToast} />
 
       {/* Clear confirm */}
       <ConfirmModal

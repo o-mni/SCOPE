@@ -93,9 +93,9 @@ def preview_modules(modules: str = ""):
     }
 
 
-@router.get("/templates")
-def list_templates():
-    """Return all built-in assessment templates."""
+@router.get("/module-templates")
+def list_module_templates():
+    """Return all built-in assessment module templates (playbook presets)."""
     return [
         {
             "id":          t["id"],

@@ -45,8 +45,9 @@ def serialize_assessment(a: models.Assessment) -> dict:
         "findingCount":  finding_count,
         "criticalCount": critical_count,
         "createdAt":     a.created_at.isoformat() if a.created_at else None,
-        "moduleNames":   json.loads(a.module_names or "[]"),
-        "templateId":    a.template_id,
+        "moduleNames":        json.loads(a.module_names or "[]"),
+        "templateId":         a.template_id,
+        "strategyTemplateId": a.strategy_template_id,
     }
 
 
