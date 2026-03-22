@@ -890,23 +890,33 @@ function ReportTab({ assessment, reportType, addToast }) {
       {/* Last generated report */}
       {lastReport && (
         <div
-          className="flex items-center justify-between p-4 rounded-xl"
+          className="p-4 rounded-xl space-y-3"
           style={{ backgroundColor: 'rgba(62,207,142,0.05)', border: '1px solid rgba(62,207,142,0.2)' }}
         >
-          <div>
-            <p className="text-sm font-medium" style={{ color: '#3ECF8E' }}>Report generated</p>
-            <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
-              {lastReport.name} · {lastReport.size}
-            </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#3ECF8E' }}>PDF generated successfully</p>
+              <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+                {lastReport.name} &mdash; {lastReport.size}
+              </p>
+            </div>
+            <span
+              className="text-xs px-2 py-0.5 rounded font-mono flex-shrink-0"
+              style={{ backgroundColor: 'rgba(62,207,142,0.12)', color: '#3ECF8E', border: '1px solid rgba(62,207,142,0.2)' }}
+            >
+              PDF
+            </span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.open(`${API}/reports/${lastReport.id}/view`, '_blank')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white/5"
-              style={{ color: '#4F8EF7', border: '1px solid #2A2D3A' }}
+            <a
+              href={`${API}/reports/${lastReport.id}/view`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              style={{ backgroundColor: '#4F8EF7', color: '#fff' }}
             >
-              <ExternalLink size={12} /> Open
-            </button>
+              <ExternalLink size={12} /> Open PDF
+            </a>
             <a
               href={`${API}/reports/${lastReport.id}/download`}
               download

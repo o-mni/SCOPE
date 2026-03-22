@@ -2,57 +2,83 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Assessment Strategy — {{ plan.title | default("Security Assessment") }} — SCOPE</title>
+  <title>{{ plan.title | default("Assessment Strategy Plan") }}</title>
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
 
-{# ══════════════════════════════════════════════════════════
-   COVER PAGE
-══════════════════════════════════════════════════════════ #}
-<div class="cover" id="cover">
-  <div class="doc-type">Assessment Strategy Plan</div>
-  <h1>{{ plan.title | default("Security Assessment Strategy") }}</h1>
-  <div class="subtitle">{{ plan.subtitle | default("Pre-engagement planning document for automated security assessment") }}</div>
+{# Running header #}
+<div id="page-header">
+  <span class="header-left">{{ plan.title | default("Assessment Strategy") }}</span>
+  <span class="header-right">Assessment Strategy Plan</span>
+</div>
 
-  <div class="cover-meta">
-    <div><strong>Target System:</strong>  {{ plan.target | default("N/A") }}</div>
-    <div><strong>Planned by:</strong>     {{ plan.author | default("SCOPE Platform") }}</div>
-    <div><strong>Version:</strong>        {{ plan.version | default("1.0") }}</div>
-    <div><strong>Created:</strong>        {{ plan.created_at | default("—") }}</div>
-    <div><strong>Assessment Window:</strong>
-      {{ plan.window_start | default("—") }}
-      {% if plan.window_end %} &rarr; {{ plan.window_end }}{% endif %}
+{# ══════════════════════════════════════════════════════════════════════════
+   COVER PAGE
+══════════════════════════════════════════════════════════════════════════ #}
+<div class="cover">
+  <div class="cover-inner">
+    <div class="cover-doc-type">Assessment Strategy Plan</div>
+    <h1>{{ plan.title | default("Security Assessment Strategy") }}</h1>
+    <div class="cover-subtitle">{{ plan.subtitle | default("Pre-engagement planning document for automated security assessment") }}</div>
+
+    <div class="cover-meta-grid">
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Target System</div>
+        <div class="cover-meta-value">{{ plan.target | default("—") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Prepared By</div>
+        <div class="cover-meta-value">{{ plan.author | default("SCOPE Platform") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Version</div>
+        <div class="cover-meta-value">{{ plan.version | default("1.0") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Created</div>
+        <div class="cover-meta-value">{{ plan.created_at | default("—") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Status</div>
+        <div class="cover-meta-value">{{ plan.status | default("Draft") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Plan ID</div>
+        <div class="cover-meta-value">SCOPE-STRAT-{{ plan.id | default("—") }}</div>
+      </div>
     </div>
-    <div><strong>Plan ID:</strong>        <span class="text-mono">{{ plan.id | default("N/A") }}</span></div>
-    <div><strong>Status:</strong>         {{ plan.status | default("Draft") }}</div>
+  </div>
+
+  <div class="cover-footer">
+    <span class="cover-footer-brand">SCOPE — Security Configuration Observation and Protection Engine</span>
+    <span class="cover-footer-date">Generated {{ generated_at | default("—") }}</span>
   </div>
 </div>
 
-{# ══════════════════════════════════════════════════════════
+{# ══════════════════════════════════════════════════════════════════════════
    TABLE OF CONTENTS
-══════════════════════════════════════════════════════════ #}
+══════════════════════════════════════════════════════════════════════════ #}
 {% if render.include_toc %}
-<div class="toc page-break" id="toc">
-  <h2>Table of Contents</h2>
-  <ol>
-    <li><a href="#purpose">Purpose &amp; Objectives</a></li>
-    <li><a href="#scope">Assessment Scope</a></li>
-    <li><a href="#methodology">Methodology</a></li>
-    {% if plan.milestones %}<li><a href="#schedule">Schedule &amp; Milestones</a></li>{% endif %}
-    <li><a href="#risk-acceptance">Risk Acceptance Criteria</a></li>
-    <li><a href="#roles">Roles &amp; Responsibilities</a></li>
-    <li><a href="#deliverables">Expected Deliverables</a></li>
-    {% if plan.approvers %}<li><a href="#approval">Approval &amp; Sign-off</a></li>{% endif %}
-    <li><a href="#disclaimer">Disclaimer</a></li>
+<div class="toc">
+  <div class="toc-title">Table of Contents</div>
+  <ol class="toc-list">
+    <li class="toc-item"><span class="toc-item-num">1</span><span class="toc-item-title">Purpose &amp; Objectives</span></li>
+    <li class="toc-item"><span class="toc-item-num">2</span><span class="toc-item-title">Assessment Scope</span></li>
+    <li class="toc-item"><span class="toc-item-num">3</span><span class="toc-item-title">Methodology</span></li>
+    {% if plan.milestones %}<li class="toc-item"><span class="toc-item-num">4</span><span class="toc-item-title">Schedule &amp; Milestones</span></li>{% endif %}
+    <li class="toc-item"><span class="toc-item-num">{{ "5" if plan.milestones else "4" }}</span><span class="toc-item-title">Risk Acceptance Criteria</span></li>
+    <li class="toc-item"><span class="toc-item-num">{{ "6" if plan.milestones else "5" }}</span><span class="toc-item-title">Roles &amp; Responsibilities</span></li>
+    <li class="toc-item"><span class="toc-item-num">{{ "7" if plan.milestones else "6" }}</span><span class="toc-item-title">Expected Deliverables</span></li>
+    {% if plan.approvers %}<li class="toc-item"><span class="toc-item-title">Approval &amp; Sign-off</span></li>{% endif %}
+    <li class="toc-item"><span class="toc-item-title">Disclaimer</span></li>
   </ol>
 </div>
 {% endif %}
 
-{# ══════════════════════════════════════════════════════════
-   PURPOSE & OBJECTIVES
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   1. PURPOSE & OBJECTIVES
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section page-break" id="purpose">
   <div class="section-header">
     <span class="section-number">1</span>
@@ -61,18 +87,14 @@
 
   <p>{{ plan.purpose | default("This document defines the strategy, scope, and approach for the planned security assessment. It is intended to align stakeholders on objectives, methodology, and expected outcomes before the assessment begins.") }}</p>
 
-  {% if plan.objectives %}
   <h3>Objectives</h3>
-  <ul>
-    {% for obj in plan.objectives %}
-    <li>{{ obj }}</li>
-    {% endfor %}
-  </ul>
+  {% if plan.objectives %}
+  <ul>{% for obj in plan.objectives %}<li>{{ obj }}</li>{% endfor %}</ul>
   {% else %}
   <ul>
     <li>Identify security misconfigurations and weaknesses in the target system.</li>
-    <li>Evaluate compliance against organisational security baseline.</li>
-    <li>Provide actionable remediation guidance for identified findings.</li>
+    <li>Evaluate compliance against the organisational security baseline.</li>
+    <li>Provide actionable remediation guidance for all identified findings.</li>
     <li>Establish a current security posture snapshot for tracking improvement over time.</li>
   </ul>
   {% endif %}
@@ -83,9 +105,9 @@
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   ASSESSMENT SCOPE
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   2. ASSESSMENT SCOPE
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section" id="scope">
   <div class="section-header">
     <span class="section-number">2</span>
@@ -94,11 +116,7 @@
 
   <h3>In Scope</h3>
   {% if plan.in_scope %}
-  <ul>
-    {% for item in plan.in_scope %}
-    <li>{{ item }}</li>
-    {% endfor %}
-  </ul>
+  <ul>{% for item in plan.in_scope %}<li>{{ item }}</li>{% endfor %}</ul>
   {% else %}
   <ul>
     <li>Operating system configuration and kernel parameters</li>
@@ -114,22 +132,14 @@
 
   <h3>Out of Scope</h3>
   {% if plan.out_of_scope %}
-  <ul>
-    {% for item in plan.out_of_scope %}
-    <li>{{ item }}</li>
-    {% endfor %}
-  </ul>
+  <ul>{% for item in plan.out_of_scope %}<li>{{ item }}</li>{% endfor %}</ul>
   {% else %}
-  <p class="text-muted">No explicit exclusions defined. All default SCOPE modules are in scope.</p>
+  <p class="text-muted">No explicit exclusions defined. All default SCOPE modules are in scope unless otherwise constrained.</p>
   {% endif %}
 
   <h3>Constraints &amp; Assumptions</h3>
   {% if plan.constraints %}
-  <ul>
-    {% for c in plan.constraints %}
-    <li>{{ c }}</li>
-    {% endfor %}
-  </ul>
+  <ul>{% for c in plan.constraints %}<li>{{ c }}</li>{% endfor %}</ul>
   {% else %}
   <ul>
     <li>Assessment will be conducted without root privileges unless explicitly granted.</li>
@@ -140,9 +150,9 @@
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   METHODOLOGY
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   3. METHODOLOGY
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section page-break" id="methodology">
   <div class="section-header">
     <span class="section-number">3</span>
@@ -162,13 +172,7 @@
       </div>
       <div class="phase-card-body">
         <p>{{ phase.description | default("") }}</p>
-        {% if phase.tasks %}
-        <ul>
-          {% for task in phase.tasks %}
-          <li>{{ task }}</li>
-          {% endfor %}
-        </ul>
-        {% endif %}
+        {% if phase.tasks %}<ul>{% for task in phase.tasks %}<li>{{ task }}</li>{% endfor %}</ul>{% endif %}
       </div>
     </div>
     {% endfor %}
@@ -206,35 +210,28 @@
         <span class="phase-name">Reporting &amp; Handover</span>
       </div>
       <div class="phase-card-body">
-        <p>Generate the preliminary assessment report, review findings with stakeholders, and deliver remediation guidance.</p>
+        <p>Generate the assessment report, review findings with stakeholders, and deliver remediation guidance.</p>
       </div>
     </div>
     {% endif %}
   </div>
 
-  <h3>Planned Modules</h3>
   {% if plan.modules %}
+  <h3>Planned Modules</h3>
   <div class="module-grid">
     {% for mod in plan.modules %}
     <div class="module-item">
       <div class="mod-id">{{ mod.id }}</div>
       <div class="mod-name">{{ mod.name }}</div>
-      {% if mod.optional %}<span class="badge badge-optional">Optional</span>{% else %}<span class="badge badge-planned">Planned</span>{% endif %}
     </div>
     {% endfor %}
-  </div>
-  {% else %}
-  <div class="callout">
-    Module selection will be finalised prior to assessment execution. All default SCOPE modules are planned to run unless marked optional or excluded by scope constraints.
   </div>
   {% endif %}
 
   {% if plan.tools %}
   <h3>Tools &amp; Techniques</h3>
   <table>
-    <thead>
-      <tr><th>Tool / Technique</th><th>Purpose</th><th>Notes</th></tr>
-    </thead>
+    <thead><tr><th>Tool / Technique</th><th>Purpose</th><th>Notes</th></tr></thead>
     <tbody>
       {% for tool in plan.tools %}
       <tr>
@@ -248,87 +245,51 @@
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   SCHEDULE & MILESTONES
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   4. SCHEDULE (optional)
+══════════════════════════════════════════════════════════════════════════ #}
 {% if plan.milestones %}
 <div class="section" id="schedule">
   <div class="section-header">
     <span class="section-number">4</span>
     <h2>Schedule &amp; Milestones</h2>
   </div>
-
   <div class="milestone-list">
     {% for ms in plan.milestones %}
     <div class="milestone">
       <div class="milestone-date">{{ ms.date | default("TBD") }}</div>
       <div class="milestone-title">{{ ms.title }}</div>
-      {% if ms.description %}
-      <div class="milestone-desc">{{ ms.description }}</div>
-      {% endif %}
+      {% if ms.description %}<div class="milestone-desc">{{ ms.description }}</div>{% endif %}
     </div>
     {% endfor %}
   </div>
 </div>
 {% endif %}
 
-{# ══════════════════════════════════════════════════════════
+{# ══════════════════════════════════════════════════════════════════════════
    RISK ACCEPTANCE CRITERIA
-══════════════════════════════════════════════════════════ #}
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section" id="risk-acceptance">
   <div class="section-header">
     <span class="section-number">{{ "5" if plan.milestones else "4" }}</span>
     <h2>Risk Acceptance Criteria</h2>
   </div>
 
-  <p>{{ plan.risk_overview | default("The following table defines how findings at each severity level will be handled post-assessment.") }}</p>
-
-  {% if risk_thresholds %}
-  <div class="risk-criteria">
-    {% if risk_thresholds.require_approval %}
-    {% for sev in risk_thresholds.require_approval %}
-    <div class="risk-row">
-      <div class="risk-sev"><span class="badge badge-{{ sev }}">{{ sev | capitalize }}</span></div>
-      <div class="risk-action">Requires explicit approval before acceptance</div>
-    </div>
-    {% endfor %}
-    {% endif %}
-    {% if risk_thresholds.log_only %}
-    {% for sev in risk_thresholds.log_only %}
-    <div class="risk-row">
-      <div class="risk-sev"><span class="badge badge-{{ sev }}">{{ sev | capitalize }}</span></div>
-      <div class="risk-action">Log and review; no immediate action required</div>
-    </div>
-    {% endfor %}
-    {% endif %}
-    {% if risk_thresholds.auto_remediate %}
-    {% for sev in risk_thresholds.auto_remediate %}
-    <div class="risk-row">
-      <div class="risk-sev"><span class="badge badge-{{ sev }}">{{ sev | capitalize }}</span></div>
-      <div class="risk-action">Automatic remediation enabled</div>
-    </div>
-    {% endfor %}
-    {% endif %}
-  </div>
-  {% else %}
   <table>
-    <thead>
-      <tr><th>Severity</th><th>Response Required</th><th>SLA</th></tr>
-    </thead>
+    <thead><tr><th>Severity</th><th>Required Response</th><th>SLA</th></tr></thead>
     <tbody>
-      <tr><td><span class="badge badge-critical">Critical</span></td><td>Immediate escalation and approval required</td><td>24 hours</td></tr>
+      <tr><td><span class="badge badge-critical">Critical</span></td><td>Immediate escalation — owner approval required before acceptance</td><td>24 hours</td></tr>
       <tr><td><span class="badge badge-high">High</span></td><td>Owner approval before acceptance</td><td>72 hours</td></tr>
       <tr><td><span class="badge badge-medium">Medium</span></td><td>Log, assign, and schedule remediation</td><td>14 days</td></tr>
       <tr><td><span class="badge badge-low">Low</span></td><td>Log and review in next cycle</td><td>90 days</td></tr>
       <tr><td><span class="badge badge-info">Info</span></td><td>Informational — no action required</td><td>N/A</td></tr>
     </tbody>
   </table>
-  {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
+{# ══════════════════════════════════════════════════════════════════════════
    ROLES & RESPONSIBILITIES
-══════════════════════════════════════════════════════════ #}
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section" id="roles">
   <div class="section-header">
     <span class="section-number">{{ "6" if plan.milestones else "5" }}</span>
@@ -337,9 +298,7 @@
 
   {% if plan.roles %}
   <table>
-    <thead>
-      <tr><th>Role</th><th>Name / Team</th><th>Responsibilities</th></tr>
-    </thead>
+    <thead><tr><th>Role</th><th>Name / Team</th><th>Responsibilities</th></tr></thead>
     <tbody>
       {% for role in plan.roles %}
       <tr>
@@ -352,34 +311,20 @@
   </table>
   {% else %}
   <table>
-    <thead>
-      <tr><th>Role</th><th>Responsibilities</th></tr>
-    </thead>
+    <thead><tr><th>Role</th><th>Responsibilities</th></tr></thead>
     <tbody>
-      <tr>
-        <td><strong>Assessment Lead</strong></td>
-        <td>Configure and execute the assessment; review all findings; deliver the final report.</td>
-      </tr>
-      <tr>
-        <td><strong>System Owner</strong></td>
-        <td>Grant access; review and accept/reject findings; approve remediation actions.</td>
-      </tr>
-      <tr>
-        <td><strong>Security Team</strong></td>
-        <td>Validate critical findings; advise on remediation; sign off on risk acceptance decisions.</td>
-      </tr>
-      <tr>
-        <td><strong>Operations</strong></td>
-        <td>Implement remediation steps; confirm resolution; retest as required.</td>
-      </tr>
+      <tr><td><strong>Assessment Lead</strong></td><td>Configure and execute the assessment; review all findings; deliver the final report.</td></tr>
+      <tr><td><strong>System Owner</strong></td><td>Grant access; review and accept/reject findings; approve remediation actions.</td></tr>
+      <tr><td><strong>Security Team</strong></td><td>Validate critical findings; advise on remediation; sign off on risk acceptance decisions.</td></tr>
+      <tr><td><strong>Operations</strong></td><td>Implement remediation steps; confirm resolution; retest as required.</td></tr>
     </tbody>
   </table>
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
+{# ══════════════════════════════════════════════════════════════════════════
    DELIVERABLES
-══════════════════════════════════════════════════════════ #}
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section" id="deliverables">
   <div class="section-header">
     <span class="section-number">{{ "7" if plan.milestones else "6" }}</span>
@@ -389,35 +334,28 @@
   {% if plan.deliverables %}
   <ul>
     {% for d in plan.deliverables %}
-    <li>
-      <strong>{{ d.name }}</strong>
-      {% if d.description %} — {{ d.description }}{% endif %}
-      {% if d.due %}<span class="text-muted"> (due: {{ d.due }})</span>{% endif %}
-    </li>
+    <li><strong>{{ d.name }}</strong>{% if d.description %} — {{ d.description }}{% endif %}{% if d.due %} <span class="text-muted">(due: {{ d.due }})</span>{% endif %}</li>
     {% endfor %}
   </ul>
   {% else %}
   <ul>
-    <li><strong>Preliminary Assessment Report</strong> — Full findings report covering all assessed modules, severity breakdown, and remediation guidance.</li>
-    <li><strong>Raw Findings Export</strong> — Machine-readable JSON/CSV export of all findings for import into tracking systems.</li>
+    <li><strong>Preliminary Assessment Report (PDF)</strong> — Full findings report with severity breakdown and remediation guidance.</li>
+    <li><strong>Raw Findings Export</strong> — Machine-readable JSON export of all findings.</li>
     <li><strong>Executive Summary</strong> — One-page summary for non-technical stakeholders.</li>
     <li><strong>Remediation Tracker</strong> — Prioritised list of remediation tasks with ownership and SLA assignments.</li>
   </ul>
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   APPROVAL & SIGN-OFF
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   APPROVAL (optional)
+══════════════════════════════════════════════════════════════════════════ #}
 {% if plan.approvers %}
-<div class="section" id="approval">
+<div class="section page-break" id="approval">
   <div class="section-header">
-    <span class="section-number">{{ "8" if plan.milestones else "7" }}</span>
     <h2>Approval &amp; Sign-off</h2>
   </div>
-
   <p>By signing below, the named individuals confirm they have reviewed this Assessment Strategy Plan and authorise the assessment to proceed as described.</p>
-
   <div class="approval-block">
     {% for approver in plan.approvers %}
     <div class="signature-box">
@@ -431,15 +369,15 @@
 </div>
 {% endif %}
 
-{# ══════════════════════════════════════════════════════════
+{# ══════════════════════════════════════════════════════════════════════════
    DISCLAIMER
-══════════════════════════════════════════════════════════ #}
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section page-break" id="disclaimer">
   <h2>Disclaimer</h2>
   <div class="disclaimer">
-    {{ disclaimer | default("This Assessment Strategy Plan is a pre-engagement document generated by SCOPE to outline the planned approach for a security assessment. It does not constitute a legal authorisation to conduct testing. Prior written approval from the system owner must be obtained before any assessment is initiated. This document is for internal planning purposes only and should be treated as confidential.") }}
+    {{ disclaimer | default("This Assessment Strategy Plan is a pre-engagement document generated by SCOPE. It does not constitute a legal authorisation to conduct testing. Prior written approval from the system owner must be obtained before any assessment is initiated. This document is for internal planning purposes only.") }}
   </div>
-  <p class="text-muted mt-lg">
+  <p class="text-muted mt-md">
     Generated by <strong>SCOPE</strong> — Security Configuration Observation and Protection Engine
     {% if generated_at %} &mdash; {{ generated_at }}{% endif %}
   </p>

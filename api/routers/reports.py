@@ -85,7 +85,7 @@ def render_report(body: RenderBody, db: Session = Depends(get_db)):
         name            = report_name,
         assessment_id   = assessment.id,
         assessment_name = assessment.name,
-        format          = "HTML",
+        format          = "PDF",
         date            = datetime.utcnow(),
         size            = size_str,
         template_id     = body.template_id,
@@ -106,29 +106,38 @@ def render_report(body: RenderBody, db: Session = Depends(get_db)):
     return serialize_report(r)
 
 
-# ── View / Download ───────────────────────────────────────────────────────────
+# ── Download / Open ───────────────────────────────────────────────────────────
 
-@router.get("/reports/{report_id}/view", response_class=HTMLResponse)
-def view_report(report_id: int, db: Session = Depends(get_db)):
+def _get_report_file(report_id: int, db: Session) -> tuple:
     r = db.query(models.Report).filter_by(id=report_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Report not found")
     if not r.file_path:
-        raise HTTPException(status_code=404, detail="Report file not available")
+        raise HTTPException(status_code=404, detail="Report file path not recorded")
     p = Path(r.file_path)
     if not p.exists():
         raise HTTPException(status_code=404, detail="Report file not found on disk")
-    return HTMLResponse(content=p.read_text(encoding="utf-8"))
+    return r, p
 
 
 @router.get("/reports/{report_id}/download")
 def download_report(report_id: int, db: Session = Depends(get_db)):
-    r = db.query(models.Report).filter_by(id=report_id).first()
-    if not r:
-        raise HTTPException(status_code=404, detail="Report not found")
-    if not r.file_path:
-        raise HTTPException(status_code=404, detail="Report file not available")
-    p = Path(r.file_path)
-    if not p.exists():
-        raise HTTPException(status_code=404, detail="Report file not found on disk")
-    return FileResponse(path=str(p), media_type="text/html", filename=p.name)
+    r, p = _get_report_file(report_id, db)
+    return FileResponse(
+        path=str(p),
+        media_type="application/pdf",
+        filename=p.name,
+        headers={"Content-Disposition": f'attachment; filename="{p.name}"'},
+    )
+
+
+@router.get("/reports/{report_id}/view")
+def view_report(report_id: int, db: Session = Depends(get_db)):
+    """Open PDF inline in browser (for the Open button)."""
+    r, p = _get_report_file(report_id, db)
+    return FileResponse(
+        path=str(p),
+        media_type="application/pdf",
+        filename=p.name,
+        headers={"Content-Disposition": f'inline; filename="{p.name}"'},
+    )

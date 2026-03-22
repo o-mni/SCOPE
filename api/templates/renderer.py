@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import jinja2
+from weasyprint import HTML as WeasyHTML
 from sqlalchemy.orm import Session
 
 import models
@@ -149,16 +150,19 @@ def render_report(
     env = _make_env(template_dir)
     tmpl = env.get_template(j2_file)
     context = _build_context(assessment, db, meta)
-
     html = tmpl.render(**context)
 
     REPORTS_OUT.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     slug = f"{assessment.id}-{ts}-{template_id}-{report_type}"
-    out_path = REPORTS_OUT / f"{slug}.html"
-    out_path.write_text(html, encoding="utf-8")
+    out_path = REPORTS_OUT / f"{slug}.pdf"
 
-    log.info("[renderer] Wrote %s (%d bytes)", out_path.name, len(html))
+    WeasyHTML(
+        string=html,
+        base_url=str(template_dir),   # resolves assets/styles.css relative paths
+    ).write_pdf(str(out_path))
+
+    log.info("[renderer] Wrote %s (%d bytes)", out_path.name, out_path.stat().st_size)
     return out_path
 
 

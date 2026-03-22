@@ -2,85 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{ assessment.title | default("Security Assessment Report") }} — SCOPE</title>
+  <title>{{ assessment.title | default("Security Assessment Report") }}</title>
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
 
-{# ══════════════════════════════════════════════════════════
-   COVER PAGE
-══════════════════════════════════════════════════════════ #}
-<div class="cover" id="cover">
-  <div class="report-label">Preliminary Security Assessment</div>
-  <h1>{{ assessment.title | default("Security Assessment Report") }}</h1>
+{# Running page header — rendered on every page except cover #}
+<div id="page-header">
+  <span class="header-left">{{ assessment.title | default("Security Assessment") }}</span>
+  <span class="header-right">Preliminary Security Assessment Report</span>
+</div>
 
-  <div class="cover-meta">
-    <div><strong>Target System:</strong> {{ assessment.target | default("N/A") }}</div>
-    <div><strong>Assessed by:</strong> {{ assessment.assessor | default("SCOPE Automated Engine") }}</div>
-    <div><strong>Assessment Date:</strong> {{ assessment.date | default("—") }}</div>
-    <div><strong>Report Generated:</strong> {{ generated_at | default("—") }}</div>
-    <div><strong>Assessment ID:</strong> <span class="text-mono">{{ assessment.id | default("N/A") }}</span></div>
-    <div><strong>Classification:</strong> {{ assessment.classification | default("Internal Use Only") }}</div>
+{# ══════════════════════════════════════════════════════════════════════════
+   COVER PAGE
+══════════════════════════════════════════════════════════════════════════ #}
+<div class="cover">
+  <div class="cover-inner">
+    <div class="cover-label">Preliminary Security Assessment</div>
+    <h1>{{ assessment.title | default("Security Assessment Report") }}</h1>
+    <div class="cover-subtitle">{{ assessment.summary | default("Automated security configuration assessment conducted by the SCOPE platform.") }}</div>
+
+    <div class="cover-meta-grid">
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Target System</div>
+        <div class="cover-meta-value">{{ assessment.target | default("—") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Assessed By</div>
+        <div class="cover-meta-value">{{ assessment.assessor | default("SCOPE Automated Engine") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Assessment Date</div>
+        <div class="cover-meta-value">{{ assessment.date | default("—") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Classification</div>
+        <div class="cover-meta-value">{{ assessment.classification | default("Internal Use Only") }}</div>
+      </div>
+      <div class="cover-meta-row">
+        <div class="cover-meta-label">Report ID</div>
+        <div class="cover-meta-value">SCOPE-{{ assessment.id | default("—") }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span class="cover-footer-brand">SCOPE — Security Configuration Observation and Protection Engine</span>
+    <span class="cover-footer-date">Generated {{ generated_at | default("—") }}</span>
   </div>
 </div>
 
-{# ══════════════════════════════════════════════════════════
+{# ══════════════════════════════════════════════════════════════════════════
    TABLE OF CONTENTS
-══════════════════════════════════════════════════════════ #}
+══════════════════════════════════════════════════════════════════════════ #}
 {% if render.include_toc %}
-<div class="toc page-break" id="toc">
-  <h2>Table of Contents</h2>
-  <ol>
-    <li><a href="#executive-summary">Executive Summary</a></li>
-    <li><a href="#scope-methodology">Scope &amp; Methodology</a></li>
-    <li><a href="#system-overview">System Overview</a></li>
-    <li><a href="#findings">Findings</a>
-      <ol>
-        <li><a href="#findings-critical">Critical</a></li>
-        <li><a href="#findings-high">High</a></li>
-        <li><a href="#findings-medium">Medium</a></li>
-        <li><a href="#findings-low">Low</a></li>
-        <li><a href="#findings-info">Informational</a></li>
+<div class="toc">
+  <div class="toc-title">Table of Contents</div>
+  <ol class="toc-list">
+    <li class="toc-item"><span class="toc-item-num">1</span><span class="toc-item-title">Executive Summary</span></li>
+    <li class="toc-item"><span class="toc-item-num">2</span><span class="toc-item-title">Scope &amp; Methodology</span></li>
+    <li class="toc-item"><span class="toc-item-num">3</span><span class="toc-item-title">System Overview</span></li>
+    <li class="toc-item">
+      <span class="toc-item-num">4</span><span class="toc-item-title">Findings</span>
+      <ol class="toc-sub">
+        {% for sev in ["critical","high","medium","low","informational"] %}
+        {% if findings_by_severity[sev] | default([]) | length > 0 %}
+        <li class="toc-item"><span class="toc-item-title">{{ sev | capitalize }} ({{ findings_by_severity[sev] | length }})</span></li>
+        {% endif %}
+        {% endfor %}
       </ol>
     </li>
-    <li><a href="#coverage">Assessment Coverage</a></li>
-    <li><a href="#recommendations">Recommendations</a></li>
-    {% if notes %}<li><a href="#notes">Analyst Notes</a></li>{% endif %}
-    <li><a href="#disclaimer">Disclaimer</a></li>
+    <li class="toc-item"><span class="toc-item-num">5</span><span class="toc-item-title">Assessment Coverage</span></li>
+    <li class="toc-item"><span class="toc-item-num">6</span><span class="toc-item-title">Recommendations</span></li>
+    {% if notes %}<li class="toc-item"><span class="toc-item-num">7</span><span class="toc-item-title">Analyst Notes</span></li>{% endif %}
+    <li class="toc-item"><span class="toc-item-num">{% if notes %}8{% else %}7{% endif %}</span><span class="toc-item-title">Disclaimer</span></li>
   </ol>
 </div>
 {% endif %}
 
-{# ══════════════════════════════════════════════════════════
-   EXECUTIVE SUMMARY
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   1. EXECUTIVE SUMMARY
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section page-break" id="executive-summary">
   <div class="section-header">
     <span class="section-number">1</span>
     <h2>Executive Summary</h2>
   </div>
 
-  <p>{{ assessment.summary | default("This report presents the findings of an automated preliminary security assessment conducted by the SCOPE platform. The assessment evaluated the target system against a baseline of security configuration checks and known vulnerability indicators.") }}</p>
+  <p>{{ assessment.summary | default("This report presents the findings of an automated preliminary security assessment conducted by the SCOPE platform. The system was evaluated against a baseline of security configuration checks and known vulnerability indicators.") }}</p>
 
-  {# Severity summary cards #}
   <div class="severity-summary">
-    {% for sev in ["critical", "high", "medium", "low", "informational"] %}
+    {% for sev in ["critical","high","medium","low","informational"] %}
     <div class="severity-card {{ sev }}">
-      <div class="sev-count">{{ findings_by_severity[sev] | default([]) | length }}</div>
-      <div class="sev-label">{{ sev | capitalize }}</div>
+      <span class="sev-count">{{ findings_by_severity[sev] | default([]) | length }}</span>
+      <span class="sev-label">{{ sev | capitalize }}</span>
     </div>
     {% endfor %}
   </div>
 
-  {% if assessment.risk_statement %}
-  <p>{{ assessment.risk_statement }}</p>
-  {% endif %}
+  {% set total = findings | length %}
+  {% set critical_n = findings_by_severity["critical"] | default([]) | length %}
+  <p>
+    A total of <strong>{{ total }} finding{{ "s" if total != 1 }}</strong> were identified during this assessment.
+    {% if critical_n > 0 %}
+    <strong>{{ critical_n }} critical finding{{ "s" if critical_n != 1 }}</strong> require immediate attention.
+    {% endif %}
+  </p>
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   SCOPE & METHODOLOGY
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   2. SCOPE & METHODOLOGY
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section" id="scope-methodology">
   <div class="section-header">
     <span class="section-number">2</span>
@@ -88,7 +120,7 @@
   </div>
 
   <h3>Assessment Scope</h3>
-  <p>{{ assessment.scope | default("The assessment covered the system configuration, installed packages, running services, network exposure, user accounts, file permissions, and security hardening baseline.") }}</p>
+  <p>{{ assessment.scope | default("The assessment covered the system configuration, installed packages, running services, network exposure, user accounts, file permissions, and security hardening baseline of the target system.") }}</p>
 
   {% if assessment.out_of_scope %}
   <h3>Out of Scope</h3>
@@ -96,17 +128,13 @@
   {% endif %}
 
   <h3>Methodology</h3>
-  <p>{{ assessment.methodology | default("SCOPE performed a non-intrusive, read-only audit of local system state. No exploits or active probes were used. All data was collected via OS-native interfaces and configuration files.") }}</p>
+  <p>{{ assessment.methodology | default("SCOPE performed a non-intrusive, read-only audit of local system state. No exploits or active probes were used. All data was collected via OS-native interfaces and configuration files. The assessment was conducted without causing any disruption to system availability.") }}</p>
 
   {% if assessment.modules_used %}
   <h4>Modules Executed</h4>
-  <table>
+  <table class="index-table">
     <thead>
-      <tr>
-        <th>Module</th>
-        <th>Description</th>
-        <th>Status</th>
-      </tr>
+      <tr><th>Module</th><th>Description</th><th>Status</th></tr>
     </thead>
     <tbody>
       {% for mod in assessment.modules_used %}
@@ -121,9 +149,9 @@
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   SYSTEM OVERVIEW
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   3. SYSTEM OVERVIEW
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section" id="system-overview">
   <div class="section-header">
     <span class="section-number">3</span>
@@ -131,15 +159,15 @@
   </div>
 
   {% if system %}
-  <table>
+  <table class="info-table">
     <tbody>
-      <tr><td><strong>Hostname</strong></td><td class="text-mono">{{ system.hostname | default("—") }}</td></tr>
-      <tr><td><strong>OS</strong></td><td>{{ system.os | default("—") }}</td></tr>
-      <tr><td><strong>Kernel</strong></td><td class="text-mono">{{ system.kernel | default("—") }}</td></tr>
-      <tr><td><strong>Architecture</strong></td><td>{{ system.arch | default("—") }}</td></tr>
-      <tr><td><strong>Uptime</strong></td><td>{{ system.uptime | default("—") }}</td></tr>
-      <tr><td><strong>Users</strong></td><td>{{ system.users | default("—") }}</td></tr>
-      <tr><td><strong>IP Addresses</strong></td><td class="text-mono">{{ system.ip_addresses | join(", ") if system.ip_addresses else "—" }}</td></tr>
+      <tr><td>Hostname</td><td class="text-mono">{{ system.hostname | default("—") }}</td></tr>
+      <tr><td>Operating System</td><td>{{ system.os | default("—") }}</td></tr>
+      <tr><td>Kernel</td><td class="text-mono">{{ system.kernel | default("—") }}</td></tr>
+      <tr><td>Architecture</td><td>{{ system.arch | default("—") }}</td></tr>
+      <tr><td>Uptime</td><td>{{ system.uptime | default("—") }}</td></tr>
+      <tr><td>Active Users</td><td>{{ system.users | default("—") }}</td></tr>
+      <tr><td>IP Addresses</td><td class="text-mono">{{ system.ip_addresses | join(", ") if system.ip_addresses else "—" }}</td></tr>
     </tbody>
   </table>
   {% else %}
@@ -147,9 +175,9 @@
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   FINDINGS
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   4. FINDINGS
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section page-break" id="findings">
   <div class="section-header">
     <span class="section-number">4</span>
@@ -157,26 +185,19 @@
   </div>
 
   {% if findings | length == 0 %}
-  <p class="text-muted">No findings were recorded for this assessment.</p>
+  <div class="callout">No findings were recorded during this assessment.</div>
   {% else %}
 
-  {# — All findings summary table — #}
   <h3>Finding Index</h3>
-  <table>
+  <table class="index-table">
     <thead>
-      <tr>
-        <th>#</th>
-        <th>ID</th>
-        <th>Title</th>
-        <th>Severity</th>
-        <th>Category</th>
-      </tr>
+      <tr><th>#</th><th>ID</th><th>Title</th><th>Severity</th><th>Category</th></tr>
     </thead>
     <tbody>
       {% for f in findings %}
       <tr>
         <td>{{ loop.index }}</td>
-        <td class="text-mono"><a href="#finding-{{ f.id }}">{{ f.id }}</a></td>
+        <td class="text-mono">{{ f.id }}</td>
         <td>{{ f.title }}</td>
         <td><span class="badge badge-{{ f.severity | lower }}">{{ f.severity }}</span></td>
         <td>{{ f.category | default("—") }}</td>
@@ -185,82 +206,79 @@
     </tbody>
   </table>
 
-  {# — Findings by severity — #}
-  {% for sev in ["critical", "high", "medium", "low", "informational"] %}
+  {# — Findings grouped by severity — #}
+  {% for sev in ["critical","high","medium","low","informational"] %}
   {% set group = findings_by_severity[sev] | default([]) %}
   {% if group | length > 0 %}
 
-  <h3 id="findings-{{ sev }}">
-    <span class="badge badge-{{ sev }}">{{ sev | capitalize }}</span>
-    Findings <span class="text-muted">({{ group | length }})</span>
-  </h3>
+  <h3><span class="badge badge-{{ sev }}">{{ sev | capitalize }}</span> &nbsp;Findings ({{ group | length }})</h3>
 
   {% for f in group %}
-  <div class="finding-card" id="finding-{{ f.id }}">
-    <div class="finding-card-header">
+  <div class="finding-card">
+    <div class="finding-card-header sev-{{ f.severity | lower }}">
       <span class="finding-id">{{ f.id }}</span>
       <span class="finding-title">{{ f.title }}</span>
       <span class="badge badge-{{ f.severity | lower }}">{{ f.severity }}</span>
     </div>
     <div class="finding-card-body">
-      <dl>
-        <dt>Description</dt>
-        <dd>{{ f.description | default("No description provided.") }}</dd>
-
-        <dt>Category</dt>
-        <dd>{{ f.category | default("—") }}</dd>
-
+      <div class="finding-dl">
+        <div class="finding-row">
+          <div class="finding-dt">Description</div>
+          <div class="finding-dd">{{ f.description | default("No description provided.") }}</div>
+        </div>
+        <div class="finding-row">
+          <div class="finding-dt">Category</div>
+          <div class="finding-dd">{{ f.category | default("—") }}</div>
+        </div>
         {% if f.affected_item %}
-        <dt>Affected Item</dt>
-        <dd class="text-mono">{{ f.affected_item }}</dd>
+        <div class="finding-row">
+          <div class="finding-dt">Affected Item</div>
+          <div class="finding-dd text-mono">{{ f.affected_item }}</div>
+        </div>
         {% endif %}
-
         {% if f.evidence %}
-        <dt>Evidence</dt>
-        <dd><pre>{{ f.evidence }}</pre></dd>
+        <div class="finding-row">
+          <div class="finding-dt">Evidence</div>
+          <div class="finding-dd"><pre>{{ f.evidence }}</pre></div>
+        </div>
         {% endif %}
-
         {% if f.remediation %}
-        <dt>Remediation</dt>
-        <dd>{{ f.remediation }}</dd>
+        <div class="finding-row">
+          <div class="finding-dt">Remediation</div>
+          <div class="finding-dd">{{ f.remediation }}</div>
+        </div>
         {% endif %}
-
         {% if f.references %}
-        <dt>References</dt>
-        <dd>
-          {% for ref in f.references %}
-            <div>{{ ref }}</div>
-          {% endfor %}
-        </dd>
+        <div class="finding-row">
+          <div class="finding-dt">References</div>
+          <div class="finding-dd">
+            {% for ref in f.references %}<div>{{ ref }}</div>{% endfor %}
+          </div>
+        </div>
         {% endif %}
-      </dl>
+      </div>
     </div>
   </div>
   {% endfor %}
-
   {% endif %}
   {% endfor %}
 
-  {% endif %} {# end findings check #}
+  {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   ASSESSMENT COVERAGE
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   5. COVERAGE
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section page-break" id="coverage">
   <div class="section-header">
     <span class="section-number">5</span>
     <h2>Assessment Coverage</h2>
   </div>
 
-  <p>The following checks were attempted during this assessment:</p>
-
   {% if coverage %}
   <div class="coverage-grid">
     {% for item in coverage %}
-    <div class="coverage-item {{ item.status | lower }}">
-      <span>{{ item.name }}</span>
-    </div>
+    <div class="coverage-item {{ item.status | lower }}">{{ item.name }}</div>
     {% endfor %}
   </div>
   {% else %}
@@ -268,9 +286,9 @@
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   RECOMMENDATIONS
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   6. RECOMMENDATIONS
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section" id="recommendations">
   <div class="section-header">
     <span class="section-number">6</span>
@@ -282,19 +300,19 @@
     {% for rec in recommendations %}
     <li>
       <strong>{{ rec.title }}</strong>
-      {% if rec.detail %}<p>{{ rec.detail }}</p>{% endif %}
-      {% if rec.priority %}<span class="badge badge-{{ rec.priority | lower }}">{{ rec.priority }}</span>{% endif %}
+      {% if rec.priority %} — <span class="badge badge-{{ rec.priority | lower }}">{{ rec.priority }}</span>{% endif %}
+      {% if rec.detail %}<p class="mt-sm">{{ rec.detail }}</p>{% endif %}
     </li>
     {% endfor %}
   </ol>
   {% else %}
-  <p class="text-muted">No specific recommendations recorded.</p>
+  <p class="text-muted">No specific recommendations recorded. Review individual finding remediation guidance above.</p>
   {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════
-   ANALYST NOTES
-══════════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════════════
+   7. ANALYST NOTES (optional)
+══════════════════════════════════════════════════════════════════════════ #}
 {% if notes %}
 <div class="section" id="notes">
   <div class="section-header">
@@ -305,16 +323,16 @@
 </div>
 {% endif %}
 
-{# ══════════════════════════════════════════════════════════
+{# ══════════════════════════════════════════════════════════════════════════
    DISCLAIMER
-══════════════════════════════════════════════════════════ #}
+══════════════════════════════════════════════════════════════════════════ #}
 <div class="section page-break" id="disclaimer">
   <h2>Disclaimer</h2>
   <div class="disclaimer">
     {{ disclaimer | default("This report was generated automatically by the SCOPE platform. Results reflect the system state at the time of assessment. For internal use only.") }}
   </div>
-  <p class="text-muted mt-lg">
-    Report generated by <strong>SCOPE</strong> — Security Configuration Observation and Protection Engine
+  <p class="text-muted mt-md">
+    Generated by <strong>SCOPE</strong> — Security Configuration Observation and Protection Engine
     {% if generated_at %} &mdash; {{ generated_at }}{% endif %}
   </p>
 </div>

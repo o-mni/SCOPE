@@ -41,12 +41,15 @@ function SettingsRow({ label, description, children }) {
 function TemplatesSection({ addToast }) {
   const [data,        setData]        = useState({ templates: [], errors: {} })
   const [loading,     setLoading]     = useState(true)
-  const [reloading,   setReloading]   = useState(false)
-  const [dupTarget,   setDupTarget]   = useState(null)   // template being duplicated
-  const [dupId,       setDupId]       = useState('')
-  const [dupName,     setDupName]     = useState('')
-  const [dupLoading,  setDupLoading]  = useState(false)
+  const [reloading,    setReloading]    = useState(false)
+  const [dupTarget,    setDupTarget]    = useState(null)
+  const [dupId,        setDupId]        = useState('')
+  const [dupName,      setDupName]      = useState('')
+  const [dupLoading,   setDupLoading]   = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [uploading,    setUploading]    = useState(false)
+  const [dragOver,     setDragOver]     = useState(false)
+  const fileInputRef = React.useRef(null)
 
   const fetchTemplates = async () => {
     try {
@@ -118,6 +121,28 @@ function TemplatesSection({ addToast }) {
       await fetchTemplates()
     } catch (e) {
       addToast(`Delete failed: ${e.message}`, 'error')
+    }
+  }
+
+  const handleUpload = async (file) => {
+    if (!file || !file.name.endsWith('.zip')) {
+      addToast('Please select a .zip template archive', 'error')
+      return
+    }
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch(`${API}/templates/upload`, { method: 'POST', body: fd })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.detail || `HTTP ${res.status}`)
+      addToast(`Template "${result.name}" installed`, 'success')
+      await fetchTemplates()
+    } catch (e) {
+      addToast(`Upload failed: ${e.message}`, 'error')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -260,6 +285,83 @@ function TemplatesSection({ addToast }) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* ── Add Template ─────────────────────────────────────────────── */}
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ backgroundColor: '#1A1D27', border: '1px solid #2A2D3A' }}
+      >
+        <div className="px-6 py-4" style={{ borderBottom: '1px solid #2A2D3A' }}>
+          <h2 className="text-sm font-semibold" style={{ color: '#E8EAF0' }}>Add Template</h2>
+          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+            Upload a <code className="text-xs px-1 rounded" style={{ backgroundColor: '#0F1117', color: '#3ECF8E' }}>.zip</code> archive
+            containing a valid template folder, or duplicate an existing template to customise it.
+          </p>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Drop zone */}
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => {
+              e.preventDefault()
+              setDragOver(false)
+              const f = e.dataTransfer.files[0]
+              if (f) handleUpload(f)
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className="flex flex-col items-center justify-center gap-2 p-8 rounded-xl cursor-pointer transition-colors"
+            style={{
+              border: `2px dashed ${dragOver ? '#4F8EF7' : '#2A2D3A'}`,
+              backgroundColor: dragOver ? 'rgba(79,142,247,0.04)' : 'transparent',
+            }}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".zip"
+              className="hidden"
+              onChange={e => { if (e.target.files[0]) handleUpload(e.target.files[0]) }}
+            />
+            {uploading ? (
+              <div className="flex items-center gap-2 text-sm" style={{ color: '#4F8EF7' }}>
+                <RefreshCw size={16} className="animate-spin" />
+                Installing template…
+              </div>
+            ) : (
+              <>
+                <div
+                  className="flex items-center justify-center w-10 h-10 rounded-lg"
+                  style={{ backgroundColor: 'rgba(79,142,247,0.08)', border: '1px solid rgba(79,142,247,0.15)' }}
+                >
+                  <FileText size={18} style={{ color: '#4F8EF7' }} />
+                </div>
+                <p className="text-sm font-medium" style={{ color: '#E8EAF0' }}>
+                  Drop a .zip template here
+                </p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>
+                  or click to browse — max 10 MB
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* ZIP structure hint */}
+          <div
+            className="rounded-lg p-4"
+            style={{ backgroundColor: '#0F1117', border: '1px solid #2A2D3A' }}
+          >
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280' }}>Expected ZIP structure</p>
+            <pre className="text-xs leading-relaxed" style={{ color: '#4F8EF7', fontFamily: 'monospace' }}>{`my-template/
+  template.yml
+  report.html.j2      ← for report templates
+  strategy.html.j2    ← for strategy templates
+  assets/
+    styles.css`}</pre>
+          </div>
+        </div>
       </div>
 
       {/* Duplicate modal */}
